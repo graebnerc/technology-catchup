@@ -69,7 +69,7 @@ data_reg <- data.table::fread(here("data/ECI-growth-data_final.csv")) %>%
   ) %>%
   group_by(ccode) %>%
   mutate(
-    pop_growth = log_pop - dplyr::lag(log_pop)
+    (pop_growth = log_pop - dplyr::lag(log_pop))*100
   ) %>%
   ungroup() 
 
@@ -145,7 +145,8 @@ data_reg_1990_2010_AVG <- data_reg_1990_2010 %>%
     c("ccode", "pop_growth_Mean", "hc_Mean", "primary_exports_1_share_country_Mean",
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
-      "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean")))
+      "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
+      "political_rel_Mean", "economic_rel_Mean", "legal_rel_Mean", "PropertyRights_Mean")))
 
 data_reg_predict_1990_2010 <- data_reg_1990 %>%
   select(all_of(
@@ -153,20 +154,20 @@ data_reg_predict_1990_2010 <- data_reg_1990 %>%
       "LowIncome", "LowerMiddleIncome", "HigherMiddleIncome", "OPECdummy")
   )) %>%
   inner_join(
-  data_reg_1990, data_reg_1990_2010_AVG, by=c("ccode"))  %>%
+  ., data_reg_1990_2010_AVG, by=c("ccode"))  %>%
   dplyr::rename(
-    avg_GDP_pc_PPP_growth=GDP_pc_growth,
-    kof_econ=KOF_econ,
+    avg_GDP_pc_PPP_growth=GDP_pc_growth_Mean,
+    kof_econ=KOF_econ_Mean,
     GDP_pc_PPP_log=Penn_GDP_PPP_log,
     popgrowth=pop_growth_Mean,
     humancapital=hc_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
     coalandmetalexports=coal_and_metal_exports_share_country_Mean,
-    propertyrights=PropertyRights_Mean,
+    legalquality=legal_rel_Mean,
     politicalquality=political_rel_Mean,
     economicquality=economic_rel_Mean,
-    legalquality=legal_rel_Mean,
+    propertyrights=PropertyRights_Mean
   )
 
 # colnames(data_reg_predict_1990_2010) <- c(
@@ -204,20 +205,16 @@ data_reg_predict_1970_1984 <- data_reg_1970 %>%
       "LowIncome", "LowerMiddleIncome", "HigherMiddleIncome", "OPECdummy")
   )) %>%
   inner_join(
-  data_reg_1970, data_reg_1970_1984_AVG, by=c("ccode"))  %>%
+  ., data_reg_1970_1984_AVG, by=c("ccode"))  %>%
   dplyr::rename(
-    avg_GDP_pc_PPP_growth=GDP_pc_growth,
-    kof_econ=KOF_econ,
+    avg_GDP_pc_PPP_growth=GDP_pc_growth_Mean,
+    kof_econ=KOF_econ_Mean,
     GDP_pc_PPP_log=Penn_GDP_PPP_log,
     popgrowth=pop_growth_Mean,
     humancapital=hc_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
-    coalandmetalexports=coal_and_metal_exports_share_country_Mean,
-    propertyrights=PropertyRights_Mean,
-    politicalquality=political_rel_Mean,
-    economicquality=economic_rel_Mean,
-    legalquality=legal_rel_Mean,
+    coalandmetalexports=coal_and_metal_exports_share_country_Mean
   )
 
 # Create data 1985 - 2014 for developing countries-----------------------------
