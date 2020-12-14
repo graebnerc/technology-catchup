@@ -1,14 +1,13 @@
-library(tidyverse)
-library(data.table)
-library(margins)
-library(sjPlot)
-library(here)
-library(countrycode)
-library(lmtest)
-library(sandwich)
-library(stargazer)
-library(plm)
-library(latex2exp)
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(library(countrycode))
+suppressPackageStartupMessages(library(lmtest))
+suppressPackageStartupMessages(library(sandwich))
+suppressPackageStartupMessages(library(stargazer))
+suppressPackageStartupMessages(library(plm))
+suppressPackageStartupMessages(library(xtable))
+suppressPackageStartupMessages(library(sjPlot))
 
 #' Conduct regressions with robust standard errors
 #' 
@@ -134,9 +133,6 @@ reg_predict_7 <- make_reg(
     paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
            "eci*GDP_pc_PPP_log + popgrowth + humancapital")), 
   reg_data=data_reg_predict_1985_2014)
-
-# data_reg_predict_1985_2014$predicted <- predict(reg_predict_7)   # Save the predicted values
-# data_reg_predict_1985_2014$residuals <- residuals(reg_predict_7) # Save the residual values
 
 # Regressions for robustness checks--------------------------------------------
 
@@ -334,41 +330,99 @@ stargazer(
   column.labels = c("baseline", "developing", "1970-1984", "oil", "coal", 
                     "econ inst", "pol inst", "leg inst", "leg + oil"), 
   dep.var.caption = "", digits = 3, dep.var.labels.include = FALSE, 
-  model.names = FALSE, omit.stat =  c("ser", "f") #, omit="lag*",
-  # covariate.labels = c(
-  #   "log(GDPpc)", "Globalization", "ECI", "Oil exports", # "Coal exports",
-  #   "Econ institutions", "Pol institutions", "Legal institutions", 
-  #   "Population growth", "Human capital", "log(GDPpc) $\\cdot$ ECI")
+  model.names = FALSE, omit.stat =  c("ser", "f"),
+  covariate.labels = c(
+    "log(GDPpc)", "Globalization", "ECI", "Oil exports", "Coal exports",
+    "Econ institutions", "Pol institutions", "Legal institutions",
+    "Population growth", "Human capital", "log(GDPpc) $\\cdot$ ECI")
   )
-
-# Create figures 2 and 3-------------------------------------------------------
-source(here("code/fig_2-3_margins.R"))
 
 # Appendix ------
 
-#Descriptive statistics
-stargazer(data_reg_predict_1985_2014) #cross-section
-stargazer(data_reg_predict_1990_2010) #cross-section
-stargazer(regression_data_5_year) #panel, 5-year averages
+#  Descriptive statistics
+stargazer(as.data.frame(data_reg_predict_1985_2014), float = F, 
+          out = here("output/A1-Descripitves85-14.tex")) 
+stargazer(as.data.frame(data_reg_predict_1990_2010), float = F, 
+          out = here("output/A2-Descripitves90-10.tex"))
+stargazer(as.data.frame(regression_data_5_year), float = F, 
+          out = here("output/A3-DesctipitvesPanel.tex")) 
 
-#Table with property rights
-stargazer(reg_predict_7_politicalquality, reg_predict_7_politicalquality_oilexports, reg_predict_7_propertyrights, reg_predict_7_propertyrights_oilexports, t=list(unlist(tvals.reg_predict_7_politicalquality), unlist(tvals.reg_predict_7_politicalquality_oilexports), unlist(tvals.reg_predict_7_propertyrights), unlist(tvals.reg_predict_7_propertyrights_oilexports)), se=list(unlist(ses.reg_predict_7_politicalquality), unlist(ses.reg_predict_7_politicalquality_oilexports), unlist(ses.reg_predict_7_propertyrights), unlist(ses.reg_predict_7_propertyrights_oilexports)), p=list(unlist(pvals.reg_predict_7_politicalquality), unlist(pvals.reg_predict_7_politicalquality_oilexports), unlist(pvals.reg_predict_7_propertyrights), unlist(pvals.reg_predict_7_propertyrights_oilexports)))
+# Regressions with property rights
+stargazer(reg_predict_7_politicalquality[["reg"]], 
+          reg_predict_7_politicalquality_oilexports[["reg"]], 
+          reg_predict_7_propertyrights[["reg"]], 
+          reg_predict_7_propertyrights_oilexports[["reg"]], 
+          t=list(
+            unlist(reg_predict_7_politicalquality[["tvals"]]), 
+            unlist(reg_predict_7_politicalquality_oilexports[["tvals"]]), 
+            unlist(reg_predict_7_propertyrights[["tvals"]]), 
+            unlist(reg_predict_7_propertyrights_oilexports[["tvals"]])
+            ), 
+          se=list(
+            unlist(reg_predict_7_politicalquality[["ses"]]), 
+            unlist(reg_predict_7_politicalquality_oilexports[["ses"]]), 
+            unlist(reg_predict_7_propertyrights[["ses"]]), 
+            unlist(reg_predict_7_propertyrights_oilexports[["ses"]])
+            ), 
+          p=list(
+            unlist(reg_predict_7_politicalquality[["pvals"]]),  
+            unlist(reg_predict_7_politicalquality_oilexports[["pvals"]]),
+            unlist(reg_predict_7_propertyrights[["pvals"]]),
+            unlist(reg_predict_7_propertyrights_oilexports[["pvals"]])
+            ), 
+          out = here("output/A4-PropertyRights.tex"), float = FALSE, 
+          covariate.labels = c("GDPpc (log)",
+            "Globalization", "ECI", "Political inst", "Property rights", 
+            "Population growth", "Human capital", 
+            "Oil exports", "GDPpc (log) \\cdot ECI"),
+          dep.var.caption = "", digits = 3, dep.var.labels.include = FALSE, 
+          model.names = FALSE, omit.stat =  c("ser", "f")
+          )
+# Residual plots and diagnostics
 
-#Residual plots and diagnostics
-#residuals vs. fitted plot
-plot(reg_predict_7, which=1, col=c("blue"))
+residual_plot <- tibble(
+  Residuals=reg_predict_7[["reg"]][["residuals"]],
+  `Fitted values`=reg_predict_7[["reg"]][["fitted.values"]]
+) %>%
+  ggplot(aes(x=`Fitted values`, y=Residuals)) +
+  labs(title = "Residuals vs. fittet values") +
+  geom_point() + geom_smooth(se = F, formula = y ~ x, method = "loess") +
+  theme_sjplot()
 
-#Normal Q-Q plot
-plot(reg_predict_7, which=2, col=c("red"))
-#Residuals should be normally distributed and the Q-Q Plot will show this. If residuals follow close to a straight line on this plot, it is a good indication they are normally distributed.
+ggsave(plot = residual_plot, 
+       filename = here("output/A5-ResidualPlot.pdf"), 
+       width = 6, height = 4)
 
-#test for autocorrelation
-dwtest(reg_predict_7)
+# Normal Q-Q plot
 
-#correlation matrix
+qq_plot <- tibble(
+  Residuals=reg_predict_7[["reg"]][["residuals"]]
+) %>%
+  ggplot(aes(sample=Residuals)) +
+  labs(title = "QQ-Plot") +
+  stat_qq() + stat_qq_line() +
+  theme_sjplot()
 
-corr_matrix_data <- select(data_reg_predict_1990_2010, eci, GDP_pc_PPP_log, avg_GDP_pc_PPP_growth, kof_econ, popgrowth, humancapital, legalquality, politicalquality, economicquality, oilexports)
-colnames(corr_matrix_data) <- c('ECI', 'GDPpc', 'growth', 'global', 'pop', 'hc', 'linst', 'pinst', 'einst', 'oil')
+ggsave(plot = qq_plot, 
+       filename = here("output/A6-QQPlot.pdf"), 
+       width = 6, height = 4)
 
-round(cor(corr_matrix_data, method="pearson", use="complete.obs"),
-      digits = 2)
+# Test for autocorrelation
+dwtest(reg_predict_7[["reg"]])
+
+# Correlation matrix
+
+corr_matrix_data <- select(
+  data_reg_predict_1990_2010, eci, GDP_pc_PPP_log, avg_GDP_pc_PPP_growth, 
+  kof_econ, popgrowth, humancapital, legalquality, politicalquality, 
+  economicquality, oilexports)
+
+colnames(corr_matrix_data) <- c(
+  'ECI', 'GDPpc', 'growth', 'global', 'pop', 'hc', 'linst', 'pinst', 'einst', 
+  'oil')
+
+print(xtable(
+  round(cor(corr_matrix_data, method="pearson", use="complete.obs"), 
+        digits = 2)), 
+  file = here("output/A8-Correlation.tex"), booktabs = T)
+

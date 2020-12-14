@@ -1,12 +1,8 @@
-library(tidyverse)
-library(data.table)
-library(here)
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(here))
+load("data/intermediate_data.RData")
 
-data_reg <- data.table::fread(here("data/ECI-growth-data_final.csv"))
-
-plot_complexity <- data_reg %>%
-  filter(Year>=1985, Year<2014) %>%
-  mutate(Penn_GDP_PPP_log=log(Penn_GDP_PPP)) %>%
+plot_complexity <- data_reg_1985_2014 %>%
   dplyr::group_by(ccode) %>% 
   dplyr::summarize(
     eci_Mean = mean(eci, na.rm=TRUE), 
@@ -21,7 +17,7 @@ plot_complexity <- data_reg %>%
     title = "Economic complexity and GDP per capita, average 1985-2014",
     x = "Economic Complexity Index", 
     y = "GDP per capita (log)", 
-    caption = "Sources: Penn World Table (v9.0), The Atlas of Economic Complexity (2019); own calculations."
+    caption = "Sources: Penn World Tables (v9.0), The Atlas of Economic Complexity (2019); own calculations."
   ) +
   theme_bw() +
   theme(
@@ -35,5 +31,5 @@ plot_complexity <- data_reg %>%
 plot_complexity
 
 ggsave(plot = plot_complexity, 
-       filename = here("output/Fig_1_complexity.pdf"), 
+       filename = here("output/Fig_1-ECI-GDP.pdf"), 
        width = 8, height = 5)

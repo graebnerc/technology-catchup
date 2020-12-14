@@ -1,5 +1,17 @@
 .DS_Store
 .Rhistory
 .Rproj.user
+Rplots.pdf
 .*~
 *~
+code/ECI-growth-regression-Rproject.R
+code/comparison.R
+data/ECI-growth-data_final orig.csv
+data/intermediate_data.RData
+data/intermediate_data_old.Rdata
+output/tex/*.pdf
+output/tex/*.tex
+output/*.pdf
+output/*.tex
+output/log.txt
+output/.texpadtmp

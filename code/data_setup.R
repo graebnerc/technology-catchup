@@ -1,15 +1,8 @@
-library(tidyverse)
-library(data.table)
-library(margins)
-library(sjPlot)
-library(here)
-library(countrycode)
-library(lmtest)
-library(sandwich)
-library(stargazer)
-library(plm)
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(library(countrycode))
 
-#! TODO Data is not the same as in the original!!!
 threshold_high_income <- 12055
 threshold_low_income <- 995.99
 threshold_lowermiddle_income <- 3895
@@ -56,7 +49,7 @@ data_reg <- data.table::fread(here("data/ECI-growth-data_final.csv")) %>%
     Penn_GDP_PPP_log = log(Penn_GDP_PPP),
     log_pop = log(population),
     oil_exports_share_country = oil_exports_share_country*100, 
-    coal_and_metal_exports_share_country = coal_and_metal_exports_share_country*100, # TODO! Das war vorher falsch: oil_exports_share_country
+    coal_and_metal_exports_share_country = coal_and_metal_exports_share_country*100,
     HighIncome = ifelse(GNIpc>threshold_high_income, 1, 0),
     LowIncome = ifelse(GNIpc<=threshold_low_income, 1, 0),
     LowerMiddleIncome = ifelse(
@@ -89,7 +82,8 @@ data_reg_1985_2014_AVG <- data_reg_1985_2014 %>%
       .cols = where(is.double), .fns = mean, na.rm=T, .names = "{.col}_Mean"), 
     .groups = "drop") %>%
   dplyr::select(all_of(
-    c("ccode", "pop_growth_Mean", "hc_Mean", "primary_exports_1_share_country_Mean",
+    c("ccode", "pop_growth_Mean", "hc_Mean", 
+      "primary_exports_1_share_country_Mean",
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
       "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean")))
@@ -110,20 +104,6 @@ data_reg_predict_1985_2014 <- data_reg_1985 %>%
     oilexports=oil_exports_share_country_Mean,
     coalandmetalexports=coal_and_metal_exports_share_country_Mean
   )
-# 
-# ###
-# data_reg_predict_1985_2014_new <- data_reg_predict_1985_2014
-# data_reg_1985_new <- data_reg_1985
-# data_reg_1985_2014_AVG_new <- data_reg_1985_2014_AVG
-# 
-# # load("l224.RData")
-# 
-
-# colnames(data_reg_predict_1985_2014) <- c(
-#   'ccode', 'eci', 'GDP_pc_PPP_log', 'avg_GDP_pc_PPP_growth', 'kof_econ', 
-#   'AdvancedCountry', 'HighIncome', 'LowIncome', 'LowerMiddleIncome', 
-#   'HigherMiddleIncome', 'popgrowth', 'humancapital', 'OPECdummy', 
-#   'primaryexports', 'oilexports', 'coalandmetalexports')
 
 # Create 1990 - 2010 data------------------------------------------------------
 
@@ -142,11 +122,13 @@ data_reg_1990_2010_AVG <- data_reg_1990_2010 %>%
       .cols = where(is.numeric), .fns = mean, na.rm=T, .names = "{.col}_Mean"), 
     .groups = "drop") %>%
   dplyr::select(all_of(
-    c("ccode", "pop_growth_Mean", "hc_Mean", "primary_exports_1_share_country_Mean",
+    c("ccode", "pop_growth_Mean", "hc_Mean",
+      "primary_exports_1_share_country_Mean",
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
       "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
-      "political_rel_Mean", "economic_rel_Mean", "legal_rel_Mean", "PropertyRights_Mean")))
+      "political_rel_Mean", "economic_rel_Mean", "legal_rel_Mean", 
+      "PropertyRights_Mean")))
 
 data_reg_predict_1990_2010 <- data_reg_1990 %>%
   select(all_of(
@@ -168,14 +150,10 @@ data_reg_predict_1990_2010 <- data_reg_1990 %>%
     politicalquality=political_rel_Mean,
     economicquality=economic_rel_Mean,
     propertyrights=PropertyRights_Mean
+  ) %>%
+  filter(
+    !is.na(economicquality), !is.na(legalquality), !is.na(politicalquality)
   )
-
-# colnames(data_reg_predict_1990_2010) <- c(
-#   'ccode', 'eci', 'GDP_pc_PPP_log', 'avg_GDP_pc_PPP_growth', 'kof_econ', 
-#   'AdvancedCountry', 'HighIncome', 'LowIncome', 'LowerMiddleIncome', 
-#   'HigherMiddleIncome', 'popgrowth', 'humancapital', 'OPECdummy', 
-#   'legalquality', 'politicalquality', 'economicquality', 'oilexports', 
-#   'propertyrights')
 
 # Create 1970 - 1984 data------------------------------------------------------
 
@@ -194,7 +172,8 @@ data_reg_1970_1984_AVG <- data_reg_1970_1984 %>%
       .cols = where(is.numeric), .fns = mean, na.rm=T, .names = "{.col}_Mean"), 
     .groups = "drop") %>%
   dplyr::select(all_of(
-    c("ccode", "pop_growth_Mean", "hc_Mean", "primary_exports_1_share_country_Mean",
+    c("ccode", "pop_growth_Mean", "hc_Mean", 
+      "primary_exports_1_share_country_Mean",
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
       "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean")))
@@ -226,7 +205,7 @@ data_reg_predict_1985_2014_developing <- data_reg_predict_1985_2014 %>%
 
 regression_data_5_year <- data_reg_1985_2014 %>%
   group_by(ccode, period) %>%
-  summarise(across(.cols = everything(), .fns = ~mean(.x, na.rm = T)), 
+  summarise(across(.cols = everything(), .fns = ~mean(.x, na.rm = T)),
             .groups="drop") %>%
   select(all_of(
     c("ccode", "period", "eci", "Penn_GDP_PPP_log", "GDP_pc_growth", 
@@ -240,6 +219,7 @@ colnames(regression_data_5_year) <- c(
 
 # Save intermediate data-------------------------------------------------------
 save(
+  data_reg_1985_2014,
   data_reg_predict_1985_2014,
   data_reg_predict_1990_2010,
   data_reg_predict_1970_1984,
