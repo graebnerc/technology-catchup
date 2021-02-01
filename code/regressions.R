@@ -143,6 +143,13 @@ reg_predict_7 <- make_reg(
    ), 
   reg_data=data_reg_predict_1985_2014)
 
+reg_predict_7_domesticcredit <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
+           "eci*GDP_pc_PPP_log + popgrowth + humancapital + domesticcredit")
+  ), 
+  reg_data=data_reg_predict_1985_2014)
+
 reg_predict_7_oilexports <- make_reg(
   as.formula(
     paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
@@ -284,7 +291,7 @@ stargazer(
 
 # Table 3: Robustness checks
 stargazer(
-  reg_predict_7[["reg"]], 
+  reg_predict_7_domesticcredit[["reg"]], 
   reg_predict_7_developing[["reg"]], 
   reg_predict_7_1970_1984[["reg"]], 
   reg_predict_7_oilexports[["reg"]], 
@@ -294,7 +301,7 @@ stargazer(
   reg_predict_7_legalquality[["reg"]], 
   reg_predict_7_politicalquality_oilexports[["reg"]], 
   t=list(
-    unlist(reg_predict_7[["tvals"]]), 
+    unlist(reg_predict_7_domesticcredit[["tvals"]]), 
     unlist(reg_predict_7_developing[["tvals"]]), 
     unlist(reg_predict_7_1970_1984[["tvals"]]), 
     unlist(reg_predict_7_oilexports[["tvals"]]), 
@@ -305,7 +312,7 @@ stargazer(
     unlist(reg_predict_7_politicalquality_oilexports[["tvals"]])
     ), 
   se=list(
-    unlist(reg_predict_7[["ses"]]),
+    unlist(reg_predict_7_domesticcredit[["ses"]]),
     unlist(reg_predict_7_developing[["ses"]]),
     unlist(reg_predict_7_1970_1984[["ses"]]),
     unlist(reg_predict_7_oilexports[["ses"]]),
@@ -316,7 +323,7 @@ stargazer(
     unlist(reg_predict_7_politicalquality_oilexports[["ses"]]) 
     ), 
   p=list(
-    unlist(reg_predict_7[["pvals"]]), 
+    unlist(reg_predict_7_domesticcredit[["pvals"]]),
     unlist(reg_predict_7_developing[["pvals"]]),
     unlist(reg_predict_7_1970_1984[["pvals"]]),
     unlist(reg_predict_7_oilexports[["pvals"]]), 
@@ -327,15 +334,16 @@ stargazer(
     unlist(reg_predict_7_politicalquality_oilexports[["pvals"]])
     ), 
   out = here("output/tex/Tab3_robustness_raw.tex"), float = FALSE, 
-  column.labels = c("baseline", "developing", "1970-1984", "oil", "coal", 
-                    "econ inst", "pol inst", "leg inst", "leg + oil"), 
+  column.labels = c("findev", "devel", "1970-1984", "oil", "coal", 
+                    "einst", "pinst", "linst", "pinst + oil"), 
   dep.var.caption = "", digits = 3, dep.var.labels.include = FALSE, 
   model.names = FALSE, omit.stat =  c("ser", "f"),
   covariate.labels = c(
-    "log(GDPpc)", "Globalization", "ECI", "Oil exports", "Coal exports",
-    "Econ institutions", "Pol institutions", "Legal institutions",
-    "Population growth", "Human capital", "log(GDPpc) $\\cdot$ ECI")
+    "log(GDPpc)", "global", "ECI", "oil", "coal",
+    "einst", "pinst", "linst",
+    "pop", "hc", "findev","log(GDPpc) $\\cdot$ ECI")
   )
+
 
 # Appendix ------
 
@@ -412,7 +420,7 @@ dwtest(reg_predict_7[["reg"]])
 
 # Correlation matrix
 
-corr_matrix_data <- select(
+corr_matrix_data <- dplyr::select(
   data_reg_predict_1990_2010, eci, GDP_pc_PPP_log, avg_GDP_pc_PPP_growth, 
   kof_econ, popgrowth, humancapital, legalquality, politicalquality, 
   economicquality, oilexports)
