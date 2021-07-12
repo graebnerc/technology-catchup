@@ -82,7 +82,7 @@ make_panel_reg <- function(reg_formula, reg_data, panel_model, panel_effect=NULL
 # Data used--------------------------------------------------------------------
 
 load(file = here("data/intermediate_data.RData"))
-#load(file = here("data/intermediate_data_old.Rdata"))
+load(file = here("data/intermediate_data_old.Rdata"))
 # data_reg_predict_1985_2014
 # data_reg_predict_1990_2010
 # data_reg_predict_1970_1984
@@ -123,6 +123,11 @@ reg_predict_4_humancapital <- make_reg(
     paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + humancapital + ",
            "eci*GDP_pc_PPP_log")), reg_data=data_reg_predict_1985_2014)
 
+reg_predict_4_invest <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + invest + ",
+           "eci*GDP_pc_PPP_log")), reg_data=data_reg_predict_1985_2014)
+
 reg_predict_6 <- make_reg(
   as.formula(
     paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + eci*kof_econ")), 
@@ -130,8 +135,9 @@ reg_predict_6 <- make_reg(
 
 reg_predict_7 <- make_reg(
   as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
-           "eci*GDP_pc_PPP_log + popgrowth + humancapital")), 
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
+           "eci*GDP_pc_PPP_log + popgrowth + humancapital + invest")
+  ), 
   reg_data=data_reg_predict_1985_2014)
 
 # Regressions for robustness checks--------------------------------------------
@@ -139,7 +145,7 @@ reg_predict_7 <- make_reg(
 reg_predict_7 <- make_reg(
   as.formula(
    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-          "eci*GDP_pc_PPP_log + popgrowth + humancapital")
+          "eci*GDP_pc_PPP_log + popgrowth + humancapital + invest")
    ), 
   reg_data=data_reg_predict_1985_2014)
 
@@ -238,54 +244,67 @@ reg_panel_5year_7_cfe <- make_panel_reg(
   panel_effect="individual")
 
 # Table 2: Main econometric results (1985-2014, 108 countries)-----------------
+order_vec <- c("GDP_pc_PPP_log", "eci", "kof_econ", "popgrowth", "humancapital", 
+               "invest", "GDP_pc_PPP_log:eci", "(Intercept)")
 stargazer(
   reg_predict_1[["reg"]], 
+  reg_predict_2[["reg"]], 
   reg_predict_4[["reg"]], 
   reg_predict_4_kof[["reg"]], 
   reg_predict_4_popgrowth[["reg"]], 
   reg_predict_4_humancapital[["reg"]], 
+  reg_predict_4_invest[["reg"]], 
   reg_predict_7[["reg"]], 
   reg_panel_5year_7[["reg"]], 
   reg_panel_5year_7_cfe[["reg"]], 
   t = list(
     unlist(reg_predict_1[["tvals"]]), 
+    unlist(reg_predict_2[["tvals"]]), 
     unlist(reg_predict_4[["tvals"]]), 
     unlist(reg_predict_4_kof[["tvals"]]), 
     unlist(reg_predict_4_popgrowth[["tvals"]]), 
     unlist(reg_predict_4_humancapital[["tvals"]]), 
+    unlist(reg_predict_4_invest[["tvals"]]), 
     unlist(reg_predict_7[["tvals"]]), 
     unlist(reg_panel_5year_7[["tvals"]]), 
     unlist(reg_panel_5year_7_cfe[["tvals"]])
     ), 
   se=list(
     unlist(reg_predict_1[["ses"]]), 
+    unlist(reg_predict_2[["ses"]]), 
     unlist(reg_predict_4[["ses"]]), 
     unlist(reg_predict_4_kof[["ses"]]), 
     unlist(reg_predict_4_popgrowth[["ses"]]), 
     unlist(reg_predict_4_humancapital[["ses"]]), 
+    unlist(reg_predict_4_invest[["ses"]]), 
     unlist(reg_predict_7[["ses"]]), 
     unlist(reg_panel_5year_7[["ses"]]), 
     unlist(reg_panel_5year_7_cfe[["ses"]])
     ), 
   p=list(
     unlist(reg_predict_1[["pvals"]]), 
+    unlist(reg_predict_2[["pvals"]]), 
     unlist(reg_predict_4[["pvals"]]), 
     unlist(reg_predict_4_kof[["pvals"]]), 
     unlist(reg_predict_4_popgrowth[["pvals"]]), 
     unlist(reg_predict_4_humancapital[["pvals"]]), 
+    unlist(reg_predict_4_invest[["pvals"]]), 
     unlist(reg_predict_7[["pvals"]]), 
     unlist(reg_panel_5year_7[["pvals"]]), 
     unlist(reg_panel_5year_7_cfe[["pvals"]])
     ),
   float = FALSE, out = here("output/tex/Tab2_mainresults_raw.tex"),
-  column.labels = c("uncond. conv.", "ECI", "KOFecon", "POPgrowth", "HumanCapital", 
-                    "All controls", "Panel-pooled", "country-FE"), 
-  dep.var.caption = "", digits = 2, dep.var.labels.include = FALSE, 
+  #column.labels = c("uncond. conv.", "ECI", "KOFecon", "POPgrowth", "HumanCapital", 
+  #                  "All controls", "Panel-pooled", "country-FE"), 
+  dep.var.caption = "", digits = 3, dep.var.labels.include = FALSE, 
   model.names = FALSE, omit.stat =  c("ser", "f"),
-  order = c(1, 7, 4, 5, 6, 8),
-  covariate.labels = c(
-    "log(GDPpc)", "ECI", "Globalization", "Population growth", "Human capital",
-    "log(GDPpc) $\\cdot$ ECI"),
+  #order = c(1, 7, 4, 5, 6, 8, 9),
+  #order = c("GDP_pc_PPP_log", "eci", "kof_econ", "popgrowth", "humancapital", 
+  #          "invest", "GDP_pc_PPP_log:eci", "(Intercept)"),
+  order=paste0("^", order_vec , "$"),
+  #covariate.labels = c(
+  #  "log(GDPpc)", "ECI", "Globalization", "Population growth", "Human capital",
+  #  "log(GDPpc) $\\cdot$ ECI"),
   omit = "lag*"
   )
 
