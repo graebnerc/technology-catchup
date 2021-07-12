@@ -82,7 +82,7 @@ make_panel_reg <- function(reg_formula, reg_data, panel_model, panel_effect=NULL
 # Data used--------------------------------------------------------------------
 
 load(file = here("data/intermediate_data.RData"))
-load(file = here("data/intermediate_data_old.Rdata"))
+# load(file = here("data/intermediate_data_old.Rdata"))
 # data_reg_predict_1985_2014
 # data_reg_predict_1990_2010
 # data_reg_predict_1970_1984
@@ -125,7 +125,7 @@ reg_predict_4_humancapital <- make_reg(
 
 reg_predict_4_invest <- make_reg(
   as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + invest + ",
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + inv_share + ",
            "eci*GDP_pc_PPP_log")), reg_data=data_reg_predict_1985_2014)
 
 reg_predict_6 <- make_reg(
@@ -136,7 +136,7 @@ reg_predict_6 <- make_reg(
 reg_predict_7 <- make_reg(
   as.formula(
     paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-           "eci*GDP_pc_PPP_log + popgrowth + humancapital + invest")
+           "eci*GDP_pc_PPP_log + popgrowth + humancapital + inv_share")
   ), 
   reg_data=data_reg_predict_1985_2014)
 
@@ -145,7 +145,7 @@ reg_predict_7 <- make_reg(
 reg_predict_7 <- make_reg(
   as.formula(
    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-          "eci*GDP_pc_PPP_log + popgrowth + humancapital + invest")
+          "eci*GDP_pc_PPP_log + popgrowth + humancapital + inv_share")
    ), 
   reg_data=data_reg_predict_1985_2014)
 
@@ -245,7 +245,7 @@ reg_panel_5year_7_cfe <- make_panel_reg(
 
 # Table 2: Main econometric results (1985-2014, 108 countries)-----------------
 order_vec <- c("GDP_pc_PPP_log", "eci", "kof_econ", "popgrowth", "humancapital", 
-               "invest", "GDP_pc_PPP_log:eci", "(Intercept)")
+               "inv_share", "GDP_pc_PPP_log:eci", "(Intercept)")
 stargazer(
   reg_predict_1[["reg"]], 
   reg_predict_2[["reg"]], 

@@ -9,7 +9,9 @@ threshold_lowermiddle_income <- 3895
 
 vars_used <- c(
   "AdvancedCountry", "HighIncome", "LowIncome", "LowerMiddleIncome", 
-  "HigherMiddleIncome", "OPECdummy")
+  "HigherMiddleIncome", "OPECdummy",
+  "inv_share" # TODO <- Not yet considered
+  )
 
 vars_inst <- c("political_rel", "economic_rel", "legal_rel", "PropertyRights")
 
@@ -75,6 +77,10 @@ data_reg_1985_2014 <- data_reg %>%
   filter(Year>=1985, Year<=2014) %>%
   select(all_of(c(vars_used, vars_used_avg, "period")))
 
+regression_data_1_year <- data_reg %>%
+  filter(Year>=1985, Year<=2014) %>%
+  select(all_of(c(vars_used, vars_used_avg, "Year")))
+
 data_reg_1985_2014_AVG <- data_reg_1985_2014 %>% 
   dplyr::group_by(ccode) %>% 
   dplyr::summarise(
@@ -86,7 +92,8 @@ data_reg_1985_2014_AVG <- data_reg_1985_2014 %>%
       "primary_exports_1_share_country_Mean",
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
-      "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean")))
+      "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
+      "inv_share_Mean")))
 
 data_reg_predict_1985_2014 <- data_reg_1985 %>%
   select(all_of(
@@ -100,6 +107,7 @@ data_reg_predict_1985_2014 <- data_reg_1985 %>%
     GDP_pc_PPP_log=Penn_GDP_PPP_log,
     popgrowth=pop_growth_Mean,
     humancapital=hc_Mean,
+    inv_share=inv_share_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
     coalandmetalexports=coal_and_metal_exports_share_country_Mean
@@ -127,13 +135,14 @@ data_reg_1990_2010_AVG <- data_reg_1990_2010 %>%
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
       "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
-      "political_rel_Mean", "economic_rel_Mean", "legal_rel_Mean", 
+      "political_rel_Mean", "economic_rel_Mean", "legal_rel_Mean",
       "PropertyRights_Mean")))
 
 data_reg_predict_1990_2010 <- data_reg_1990 %>%
   select(all_of(
     c("ccode", "eci", "Penn_GDP_PPP_log", "AdvancedCountry", "HighIncome", 
-      "LowIncome", "LowerMiddleIncome", "HigherMiddleIncome", "OPECdummy")
+      "LowIncome", "LowerMiddleIncome", "HigherMiddleIncome", "OPECdummy", 
+      "inv_share")
   )) %>%
   inner_join(
   ., data_reg_1990_2010_AVG, by=c("ccode"))  %>%
@@ -143,6 +152,7 @@ data_reg_predict_1990_2010 <- data_reg_1990 %>%
     GDP_pc_PPP_log=Penn_GDP_PPP_log,
     popgrowth=pop_growth_Mean,
     humancapital=hc_Mean,
+    # inv_share=inv_share_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
     coalandmetalexports=coal_and_metal_exports_share_country_Mean,
@@ -191,6 +201,7 @@ data_reg_predict_1970_1984 <- data_reg_1970 %>%
     GDP_pc_PPP_log=Penn_GDP_PPP_log,
     popgrowth=pop_growth_Mean,
     humancapital=hc_Mean,
+    # inv_share=inv_share_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
     coalandmetalexports=coal_and_metal_exports_share_country_Mean
@@ -211,18 +222,18 @@ regression_data_5_year <- data_reg_1985_2014 %>%
     c("ccode", "period", "eci", "Penn_GDP_PPP_log", "GDP_pc_growth", 
       "KOF_econ", "AdvancedCountry", "HighIncome", "LowIncome", 
       "LowerMiddleIncome", "HigherMiddleIncome", "pop_growth", "hc", 
-      "OPECdummy")))
+      "OPECdummy", "inv_share")))
 colnames(regression_data_5_year) <- c(
   'ccode', 'period', 'eci', 'Penn_GDP_PPP_log', 'GDP_pc_growth', 'kof_econ', 
   'AdvancedCountry', 'HighIncome', 'LowIncome', 'LowerMiddleIncome', 
-  'HigherMiddleIncome', 'popgrowth', 'humancapital', 'OPECdummy')
+  'HigherMiddleIncome', 'popgrowth', 'humancapital', 'OPECdummy', 'inv_share')
 
 # Save intermediate data-------------------------------------------------------
 save(
-  data_reg_1985_2014,
   data_reg_predict_1985_2014,
   data_reg_predict_1990_2010,
   data_reg_predict_1970_1984,
+  regression_data_1_year,
   regression_data_5_year,
   data_reg_predict_1985_2014_developing, 
   file = here("data/intermediate_data.RData")
