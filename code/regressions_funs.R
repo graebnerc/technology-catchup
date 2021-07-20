@@ -20,8 +20,12 @@ make_reg <- function(reg_formula, reg_data){
     coeftest(reg_object, vcov.=function(x) vcovHC(x))[,3]) 
   pvals <- list(
     coeftest(reg_object, vcov.=function(x) vcovHC(x))[,4]) 
+  
+  marg_obj <- margins(lm(formula = reg_formula, data = reg_data))
+  
   final_list <- list(
     "reg" = reg_object,
+    "marg" = marg_obj,
     "ses" = ses,
     "tvals" = tvals,
     "pvals" = pvals
