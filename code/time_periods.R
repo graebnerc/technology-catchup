@@ -11,8 +11,9 @@ source(here("code/regressions_funs.R"))
 
 compute_estimates <- TRUE # If TRUE step 1 below gets computed
 # This takes some time, so only reasonable if underlying regressions changed
-analysis_result_file <- here("output/eci_estimations.csv")
-
+variable_of_interest <- "eci"#  "eci" # "GDP_pc_PPP_log" 
+analysis_result_file <- here(
+  paste0("output/heatmaps/estimations_", variable_of_interest, ".csv"))
 # 1. Compute the estimates (optional)------------
 
 if (compute_estimates){
@@ -136,7 +137,6 @@ if (compute_estimates){
   # 1.2. The actual analysis loop----------------
   start_year <- 1985
   end_year <- 2014
-  variable_of_interest <- "GDP_pc_PPP_log"
   
   min_range <- 1962:2012
 
@@ -161,6 +161,7 @@ if (compute_estimates){
           reg_data=current_data)
         
         marg_sum <- summary(full_reg[["marg"]])
+        mem_marg_sum <- summary(full_reg[["mem_marg"]])
         
         
         full_reg_results <- list(
@@ -170,6 +171,10 @@ if (compute_estimates){
           ame_est = unname(filter(tibble(marg_sum),
                                   factor==variable_of_interest)[["AME"]]),
           ame_pval = unname(filter(tibble(marg_sum),
+                                   factor==variable_of_interest)[["p"]]),
+          mem_est = unname(filter(tibble(mem_marg_sum),
+                                  factor==variable_of_interest)[["AME"]]),
+          mem_pval = unname(filter(tibble(mem_marg_sum),
                                    factor==variable_of_interest)[["p"]])
         )
       }, 
@@ -183,7 +188,9 @@ if (compute_estimates){
           estimate_ =  NA,
           pvalue_ = NA,
           ame_est = NA,
-          ame_pval= NA
+          ame_pval= NA,
+          mem_est = NA,
+          mem_pval= NA
         )
         return(full_reg_results)
       }
@@ -196,7 +203,9 @@ if (compute_estimates){
         estimate = full_reg_results[["estimate_"]],
         pvalue = full_reg_results[["pvalue_"]],
         ame_estimate = full_reg_results[["ame_est"]],
-        ame_pvalue = full_reg_results[["ame_pval"]]
+        ame_pvalue = full_reg_results[["ame_pval"]],
+        mem_estimate = full_reg_results[["mem_est"]],
+        mem_pvalue = full_reg_results[["mem_pval"]]
       )
       
       est_list[[paste0(mi, "_", ma)]] <- res_table
@@ -213,63 +222,90 @@ final_eci <- fread(analysis_result_file, select = c(
   "start_year"="double", "end_year"="double", 
   "variable"="character",
   "estimate"="double", "pvalue"="double",
-  "ame_estimate"="double", "ame_pvalue"="double"
+  "ame_estimate"="double", "ame_pvalue"="double",
+  "mem_estimate"="double", "mem_pvalue"="double"
   ))
 
-# Version 1: insignificant estimates set to zero
-final_eci_map_v1 <- final_eci %>%
-  dplyr::mutate(
-    est_p = ifelse(ame_pvalue<0.1, ame_estimate, 0)
-  ) %>%
-  ggplot(data = ., aes(y = start_year, x = end_year)) + 
-  geom_tile(aes(fill = est_p)) + 
-  scale_fill_viridis_c(option = "B") +
-  theme_bw() +
-  labs(
-    title = paste0("Estimated AME for ", variable_of_interest), 
-    y = "Start year", x = "End year", 
-    caption = "Grey cells indicate uncomputable, black cells insignificant estimates."
+for (marg_effect in c("AME", "MEM")){
+  if (marg_effect=="AME"){
+    marg_est <- "ame_estimate"
+    marg_pval <- "ame_pvalue"
+  } else if (marg_effect=="MEM"){
+    marg_est <- "mem_estimate"
+    marg_pval <- "mem_pvalue"
+  } else {
+    stop("WRONG MARG EFFECT SPECIFIED!!!")
+  }
+  col_max <- max(c(
+    abs(min(final_eci[[marg_est]], na.rm = TRUE)),
+    abs(max(final_eci[[marg_est]], na.rm = TRUE))
+  ))
+  col_range <- c(-col_max, col_max)
+  
+  # Version 1: insignificant estimates set to zero
+  final_eci_map_v1 <- final_eci %>%
+    dplyr::mutate(
+      est_p = ifelse(!!as.name(marg_pval)<0.1, 
+                     !!as.name(marg_est), 0)
+    ) %>%
+    ggplot(data = ., aes(y = start_year, x = end_year)) + 
+    geom_tile(aes(fill = est_p)) + 
+    scale_fill_gradient2(
+      low = "#660066", high = "#006600", mid = "grey", 
+      midpoint = 0, limits = col_range) +
+    theme_bw() +
+    labs(
+      title = paste0("Estimated ", marg_effect, " for ", variable_of_interest), 
+      y = "Start year", x = "End year", 
+      caption = "Grey cells indicate uncomputable, black cells insignificant estimates."
     ) +
-  scale_x_continuous(expand = expansion()) + 
-  scale_y_continuous(expand = expansion()) + 
-  theme(
-    panel.grid = element_blank(), 
-    legend.position = "bottom", 
-    legend.title = element_blank()
+    scale_x_continuous(expand = expansion()) + 
+    scale_y_continuous(expand = expansion()) + 
+    theme(
+      panel.grid = element_blank(), 
+      legend.position = "bottom", 
+      legend.title = element_blank()
     )
-
-ggsave(plot = final_eci_map_v1, 
-       filename = here(paste0("output/", variable_of_interest, "_heatmap_v1_ame.pdf")), 
-       height = 6, width = 5)
-
-# Version 2: insignificant results only marked
-
-final_eci_map_v2 <- final_eci %>%
-  dplyr::mutate(
-    significant = ifelse(ame_pvalue<0.1, 1, 0)
-  ) %>%
-  ggplot(data = ., aes(y = start_year, x = end_year)) + 
-  geom_tile(aes(fill = ame_estimate)) + 
-  scale_fill_viridis_c(option = "B") +
-  theme_bw() +
-  labs(
-    title = paste0("Estimated AME for ", variable_of_interest), 
-    y = "Start year", x = "End year", 
-    caption = "Grey cells indicate uncomputable, marked cells insignificant estimates."
-  ) +
-  scale_x_continuous(expand = expansion()) + 
-  scale_y_continuous(expand = expansion()) + 
-  theme(
-    panel.grid = element_blank(), 
-    legend.position = "bottom", 
-    legend.title = element_blank()
-  )
-
-final_eci_map_v2 <- final_eci_map_v2 + 
-  geom_point(data = dplyr::filter(final_eci, ame_pvalue>=0.1),
-             shape=4, show.legend = FALSE, 
-             color="grey", alpha=0.45)
-
-ggsave(plot = final_eci_map_v2, 
-       filename = here(paste0("output/", variable_of_interest, "_heatmap_v2_ame.pdf")), 
-       height = 6, width = 5)
+  
+  ggsave(plot = final_eci_map_v1, 
+         filename = here(
+           paste0("output/heatmaps/", variable_of_interest, 
+                  "_heatmap_v1_", marg_effect, ".pdf")), 
+         height = 6, width = 5)
+  
+  # Version 2: insignificant results only marked
+  
+  final_eci_map_v2 <- final_eci %>%
+    dplyr::mutate(
+      significant = ifelse(!!as.name(marg_pval)<0.1, 1, 0)
+    ) %>%
+    ggplot(data = ., aes(y = start_year, x = end_year)) + 
+    geom_tile(aes_string(fill = marg_est)) + 
+    scale_fill_gradient2(
+      low = "#660066", high = "#006600", mid = "grey", midpoint = 0, limits = col_range) +
+    theme_bw() +
+    labs(
+      title = paste0("Estimated ", marg_effect," for ", variable_of_interest), 
+      y = "Start year", x = "End year", 
+      caption = "Grey cells indicate uncomputable, marked cells insignificant estimates."
+    ) +
+    scale_x_continuous(expand = expansion()) + 
+    scale_y_continuous(expand = expansion()) + 
+    theme(
+      panel.grid = element_blank(), 
+      legend.position = "bottom", 
+      legend.title = element_blank()
+    )
+  
+  final_eci_map_v2 <- final_eci_map_v2 + 
+    geom_point(data = dplyr::filter(
+      final_eci, !!as.name(marg_pval)>=0.1),
+      shape=4, show.legend = FALSE, 
+      color="black", alpha=0.45)
+  
+  ggsave(plot = final_eci_map_v2, 
+         filename = here(
+           paste0("output/heatmaps/", variable_of_interest, 
+                  "_heatmap_v2_", marg_effect, ".pdf")), 
+         height = 6, width = 5)
+}

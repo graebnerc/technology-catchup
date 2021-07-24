@@ -23,9 +23,18 @@ make_reg <- function(reg_formula, reg_data){
   
   marg_obj <- margins(lm(formula = reg_formula, data = reg_data))
   
+  right_side_vars <- labels(
+    terms(reg_formula))[1:length(labels(terms(reg_formula)))-1]
+
+  mem_marg_obj <- margins(
+    model = lm(formula = reg_formula, data = reg_data), 
+    at = as.list(apply(reg_data[right_side_vars], 2, mean, na.rm=TRUE))
+    )
+  
   final_list <- list(
     "reg" = reg_object,
     "marg" = marg_obj,
+    "mem_marg" = mem_marg_obj,
     "ses" = ses,
     "tvals" = tvals,
     "pvals" = pvals
