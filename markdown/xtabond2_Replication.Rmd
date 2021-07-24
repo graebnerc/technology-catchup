@@ -1,0 +1,80 @@
+---
+title: "Replication of Bond et al 2001"
+author: "Claudius"
+date: "5/27/2021"
+output:
+  pdf_document:
+    includes:
+      in_header: preamble.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(plm)
+library(here)
+library(pder)
+library(data.table)
+library(stargazer)
+```
+
+```{r}
+library(haven)
+ab_data <- haven::read_dta(here("data/abdata.dta"))
+head(ab_data)
+```
+
+Table on p. 101:
+
+```{r}
+ols1 <- plm(
+  n ~ nL1 + nL2 + w + wL1 + k + kL1 + kL2 + ys +ysL1 + ysL2 + 
+    yr1976 + yr1977 + yr1978 + yr1979 + yr1980 + yr1981 + yr1982 + yr1983 + yr1984, 
+            data = ab_data, model = "pooling")
+summary(ols1)
+```
+
+Table on p. 102:
+
+```{r}
+ols2 <- plm(
+  n ~ nL1 + nL2 + w + wL1 + k + kL1 + kL2 + ys +ysL1 + ysL2, 
+            data = ab_data,  model = "within", effect = "twoways", 
+  index = c("year", "id"))
+summary(ols2)
+```
+
+Table on 106:
+
+```{r}
+ols1 <- plm(n ~ nL1 + nL2 + w + wL1 + k + kL1 + kL2 + ys +ysL1 + ysL2 + 
+              yr1976 + yr1977 + yr1978 + yr1979 + yr1980 + yr1981 + yr1982 + yr1983 + yr1984, 
+            data = ab_data, model = "pooling")
+summary(ols1)
+```
+
+```{r}
+ols1 <- plm(n ~ nL1 + nL2 + w + wL1 + k + kL1 + kL2 + ys +ysL1 + ysL2, 
+            data = ab_data, model = "within", effect = "time")
+summary(ols1)
+```
+
+```{r}
+ols2 <- plm(diff(n) ~ diff(nL1) + diff(nL2) + diff(w) + diff(wL1) + diff(k) + diff(kL1) + diff(kL2) + diff(ys) + diff(ysL1) + diff(ysL2), 
+            data = ab_data, model = "pooling")
+summary(ols2)
+```
+
+```{r}
+pgmm(n)
+```
+
+
+```{r}
+library(estimatr)
+iv_robust()
+```
+
+

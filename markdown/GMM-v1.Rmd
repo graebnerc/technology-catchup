@@ -1,0 +1,1306 @@
+---
+documentclass: article
+output:
+  pdf_document:
+    toc_depth: 4
+    keep_tex: true
+    includes:
+      in_header: preamble.tex
+      before_body: prefix.tex
+      after_body: suffix.tex
+numbersections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE, fig.align = 'center')
+```
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(library(plm))
+suppressPackageStartupMessages(library(stargazer))
+
+load(here("data/intermediate_data.RData"))
+```
+
+# General remarks
+
+In the following examples I have used GDP per capita growth as the 
+dependent variable.
+I have used three types of data:
+first, the 5-year averages from our original study, secondly, yearly data, and
+thirdly, 5-year averages as used in \citet{Bond2001}.
+The five-year averages we use for the main regressions yield to very long
+time intervals considered when we talk about differences and lagged differences.^[
+An alternative would be to use only one observation
+in each 5-year interval \citep[as done in, e.g.,][]{Acemoglu2008}. 
+The main motivation for \citet{Acemoglu2008} to do so is because the use of 
+averages likely introduces additional autocorrelating that invalidates GMM
+estimates. In our case, this is, however, not happening so I think we are save
+to use averages.}
+Thus, yearly data might be a better alternative, at least to the extent that
+we do not get too much autocorrelation (at it might be more useful for
+system GMM than for difference GMM).
+The data from \citet{Bond2001} also uses 5-year intervals, yet here
+$GDP_{t-1}$ is considered to be the first observation in the 5-year interval
+and $\Delta GDP_{t}$ the difference in logs over the 5-year interval, i.e. the
+growth rate. For controls variables I used the average over this interval.
+The interpretation of the variables is, therefore, a bit different in this
+context.
+
+In the end, we should decide on the based on the diagnostic tests for the 
+regressions, as reported at the end of each section.
+
+```{r}
+reg_dat_bond <- regression_data_1_year %>%
+  select(
+    all_of(c("Penn_GDP_PPP_log", "eci", "KOF_econ", "Year",
+             "ccode", "hc", "pop_growth", "inv_share"))
+    ) %>%
+  rename(kof_econ=KOF_econ,
+         popgrowth=pop_growth,
+         humancapital=hc,
+         GDPpc_ln=Penn_GDP_PPP_log)
+
+reg_dat_bond$period <- cut(
+  reg_dat_bond$Year, 
+  seq(min(reg_dat_bond$Year), 
+      max(reg_dat_bond$Year)+1, by=5), 
+  right = F)
+
+reg_dat_bond <- reg_dat_bond %>%
+  group_by(ccode, period) %>%
+  mutate(
+    GDPpc_first = first(GDPpc_ln), 
+    GDPpc_growth = last(GDPpc_ln) - first(GDPpc_ln),
+    eci_mean = mean(eci), eci_first = first(eci),
+    eci_diff = last(eci) - first(eci),
+    kof_econ_mean = mean(kof_econ), kof_econ_first = first(kof_econ),
+    kof_econ_diff = last(kof_econ) - first(kof_econ),
+    popgrowth_mean=mean(popgrowth),
+    humancapital_mean=mean(humancapital),
+    invshare_mean=mean(inv_share)
+  ) %>%
+  ungroup() %>%
+  select(
+    all_of(c("GDPpc_first", "GDPpc_growth",
+             "eci_mean", "eci_first", "eci_diff",
+             "kof_econ_mean","kof_econ_first", "kof_econ_diff",
+             "popgrowth_mean", "humancapital_mean", "invshare_mean",
+             "ccode", "period"))
+    ) %>%
+  unique(.) %>%
+  mutate(period_id = as.integer(period))
+```
+
+The dimension of the data is given below:.
+
+
+```{r}
+# yearly data:
+reg_dat1y <- plm::pdata.frame(
+  regression_data_1_year, index = c("ccode", "Year")) %>%
+  rename(kof_econ=KOF_econ,
+         popgrowth=pop_growth,
+         humancapital=hc)
+# 5-year averaged data:
+reg_dat5y <- plm::pdata.frame(
+  regression_data_5_year, index = c("ccode", "period"))
+# Bond et al data:
+reg_dat5y_bond <- plm::pdata.frame(
+  reg_dat_bond, index = c("ccode", "period_id"))
+```
+
+```{r, results='asis'}
+knitr::kable(tibble(
+    "Type"=c("Yearly data", "5-year averages", "Bond-like data"),
+    "N"=c(pdim(reg_dat1y)$nT$n, pdim(regression_data_5_year)$nT$n, 
+          pdim(reg_dat5y_bond)$nT$n),
+    "T"=c(pdim(reg_dat1y)$nT$T, pdim(regression_data_5_year)$nT$T, 
+          pdim(reg_dat5y_bond)$nT$T),
+    "Obs"=c(pdim(reg_dat1y)$nT$N, pdim(regression_data_5_year)$nT$N, 
+            pdim(reg_dat5y_bond)$nT$N)
+  ), 
+  #caption = "The dimensions of the data.",
+  format = "latex", booktabs = TRUE)
+```
+
+The baseline regression, which might be extended with controls and interactions
+or adjusted to the estimation technique is:
+
+\begin{align}
+  \label{eq:baseline}
+  \begin{split}
+   GROWTH_{i,t} &= \alpha GROWTH_{i,t-1} \\
+   & + \beta_1 GDPpc_{i,t-1} + \beta_2 ECI_{i,t-1} + \beta_3 KOF_{i,t-1} + \gamma X_{i,t} + \mu_i + \delta_t + u_{it}
+   \end{split}
+\end{align}
+
+with  $\mu_i$ and $\delta_t$ being individual and time fixed effects.
+The models presented below include the standard (but biased) OLS and *within*
+models as benchmark, the instrumental variables approach by \citet{ahisao82},
+the difference GMM and the system GMM. From what the literature says the latter
+is most likely the most plausible one, yet the assumptions are strong and 
+carry theoretical assumptions about countries being on their long-term 
+equilibrium path \citep[][]{BlundellBond1998} - something that one might discuss 
+on a more fundamental level.
+Also, one might discuss the estimation equation in the sense that growth needs
+another lag treatment than the other variables since it already is a difference 
+in logs of $GDPpc$.
+
+In any case, below the results for the different data sets. I do make some 
+comments, but to avoid repetition I do so mainly in the first case.
+
+# Five-year averages
+
+## Benchmark models: OLS and Within
+
+First, I do the estimations using the five-year averages data we have compiled
+and that Philipp has used for the 'conventional' panel models. In the following
+we see basically the standard panel regressions we already did, except that
+they now contain both country and time fixed effects 
+(see table \ref{tab:basepan}). 
+
+Also, I am not sure 
+whether we should use the lag of our openness measure or the contemporaneous 
+value. In the literature one usually says: use contemporaneous value if the
+variable is strictly endogenous (unlikely, in my view), one lag if it is 
+predetermined (uncorrelated with past, correlated with future errors), and 
+two or more lags if it is endogenous.
+While we used the contemporaneous value so far, I think the alternatives
+are more likely to be correct.
+
+```{r}
+min_panel <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1), 
+  data=reg_dat5y, model="within",
+  effect="twoways", na.action=na.exclude)
+
+sparse_panel <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1) + 
+    popgrowth + inv_share, 
+  data=reg_dat5y, model="within",
+  effect="twoways", na.action=na.exclude)
+
+sparse_panel_int <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1) + 
+    lag(eci,1) * lag(Penn_GDP_PPP_log, 1) +
+    popgrowth + inv_share, 
+  data=reg_dat5y, model="within",
+  effect="twoways", na.action=na.exclude)
+
+full_panel <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1) + 
+    lag(eci,1) * lag(Penn_GDP_PPP_log,1) + 
+    popgrowth + humancapital + inv_share,
+  data=reg_dat5y, model="within",
+  effect="twoways", na.action=na.exclude)
+```
+
+```{r, results='asis'}
+stargazer(min_panel, sparse_panel, sparse_panel_int, full_panel, 
+          label = "tab:basepan",
+          type = "latex", omit.stat = "f", header = FALSE, float = TRUE)
+```
+
+We next test whether including a lag of the dependent variable can improve 
+upon the results. Results can be found in table \ref{tab:dynpanel}.
+
+```{r}
+min_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci,1) + lag(kof_econ, 1), 
+  data=reg_dat5y, 
+  model="pooling"
+  )
+min_panel <- update(min_ols, model="within", effect="twoways")
+
+sparse_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci,1) + lag(kof_econ, 1) + popgrowth + inv_share, 
+  data=reg_dat5y, 
+  model="pooling"
+  )
+sparse_panel <- update(sparse_ols, model="within", effect="twoways")
+
+sparse_int_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci,1) + lag(kof_econ, 1) + lag(eci,1) * lag(Penn_GDP_PPP_log, 1) +
+    popgrowth + inv_share, 
+  data=reg_dat5y, 
+  model="pooling"
+  )
+sparse_int_panel <- update(sparse_int_ols, model="within", effect="twoways")
+
+full_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) +
+    lag(eci,1) + lag(kof_econ, 1) + lag(eci,1) * lag(Penn_GDP_PPP_log,1) + 
+    popgrowth + humancapital + inv_share,
+  model = "pooling", 
+  data=reg_dat5y, 
+  )
+full_panel <- update(full_ols, model="within", effect="twoways")
+```
+
+```{r, results='asis'}
+stargazer(
+  min_ols, min_panel,
+  sparse_ols, sparse_panel,
+  sparse_int_ols, sparse_int_panel, 
+  full_ols, full_panel,
+  title = "Dynamic panel (5-year averages)", header = F, 
+  float.env = "sidewaystable", 
+  label = "tab:dynpanel", float = TRUE,
+  type = "latex", omit.stat = "f")
+```
+
+These results are plausible in the sense that it has been shown that in
+a dynamic context the *within*-estimator suffers from a downward, and the 
+OLS-estimator from an upward bias for the autoregressive parameter. 
+In all the models above $\alpha_{OLS}>\alpha_{within}$.
+Any convincing model should yield estimates for $\alpha$ that lie within 
+this corridor \citep[][145]{Bond2001}.^[If this is not the case, \citet{Bond2001}
+suggests to re-think the reference to an $AR(1)$ process and consider more 
+lags, or a different model altogether.] 
+On top of this, \citet{Bond2001, xtabond2} argues that credible estimates
+are most likely between zero and one since larger values would imply an 
+autoregressive process away from equilibrium values.
+
+## The Anderson-Hsiao instrumental variable estimator
+
+The simplest next step is the IV estimator of Anderson-Hsiao. While 
+consistent it is not very efficient and, therefore, often yields results
+that might be far of the true values, especially if the model specification is
+not 100 per cent accurate, or if past level values are poor instruments for
+present differences. Because the fundamental idea is to estimate the model
+in differencse (to eliminate country specific effects), and then to instrument
+endogeneous variables with past level values.
+Thus, for the minimal model specification with $GDP$, $ECI$ and $KOF$ as 
+explanatory variables we would estimate:
+
+$$\Delta GROWTH_{i,t} = \alpha \Delta GROWTH_{i,t-1} + \beta_1\Delta GDP_{i,t-1} + \beta_2\Delta ECI_{i,t-1} + \beta_3\Delta KOF_{i,t-1} + \Delta \delta_t + \Delta v_{it}$$
+
+Since at least $\Delta GROWTH_{i,t-1}=GROWTH_{i,t}-GROWTH_{i,t-1}$ is 
+endogenous since it is correlated
+with $\Delta v_{it}=v_{it}-v_{i,t-1}$ by construction, we need instruments. 
+The suggestions of \citet{ahisao82} were to use either 
+$\Delta GROWTH_{i,t-2}=GROWTH_{i,-2}-GROWTH_{i,t-3}$ or $GROWTH_{i,t-2}$.
+The advantage of the first choice is that it is less costly in terms of
+observations, however, past levels are less likely to be correlated with
+current changes, so the second option is more likely to produce good 
+instruments. Only considering the immediate results for the minimal model
+tend to confirm this:
+
+```{r}
+min_ah_level <- plm(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + lag(diff(eci),1) + lag(diff(kof_econ), 1) | 
+    lag(GDP_pc_growth, 2) + lag(Penn_GDP_PPP_log, 2) + lag(eci,2) + lag(kof_econ, 2) , 
+  data=reg_dat5y, 
+  model="within", effect = "time"
+  )
+```
+
+```{r}
+min_ah_diff <- plm(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + lag(diff(eci),1) + lag(diff(kof_econ), 1) | 
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 1) + lag(diff(eci),1) + lag(diff(kof_econ), 1) , 
+  data=reg_dat5y, 
+  model="within", effect = "time"
+  )
+```
+
+```{r, results='asis'}
+stargazer(
+  min_ah_level,
+  min_ah_diff, 
+  title = "Anderson-Hsiao IV (minimal model)",
+  type = "latex", omit.stat = "f", float = FALSE, header = FALSE,
+  column.labels = c("Level instruments", "Diff instruments"))
+```
+
+The model using levels as instruments is not even significant as a whole
+(p value of joint F test: 
+`r unname(round(summary(min_ah_level)$fstatistic[["p.value"]], 2))`).
+But irrespective of these considerations, the estimator, while consistent, is 
+likely to perform poorly in practice given its lack of efficiency.
+Also, it is sensitive to specification issues. This is evident in the
+results for our case, shown in table \ref{tab:ahsio}
+
+```{r}
+sparse_as_eq <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + 
+    lag(diff(eci), 1) + lag(diff(kof_econ), 1) + diff(popgrowth) + diff(inv_share) |
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 2) + lag(diff(eci), 2) + 
+    lag(diff(kof_econ), 2) + diff(popgrowth) + diff(inv_share, 1)
+  )
+
+sparse_as <- plm(
+  formula = sparse_as_eq, 
+  data=reg_dat5y, # regression_data_5_year
+  model="within", effect="time"
+  )
+
+# TODO: how to instrument an interaction term?
+
+sparse_int_as_eq <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + 
+    lag(diff(eci), 1) + lag(diff(kof_econ), 1) + 
+    lag(diff(eci)*diff(Penn_GDP_PPP_log), 1) + 
+    diff(popgrowth) + diff(inv_share) |
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 2) + lag(diff(eci), 2) + 
+    lag(diff(eci)*diff(Penn_GDP_PPP_log), 2) + 
+    lag(diff(kof_econ), 2) + diff(popgrowth) + diff(inv_share,)
+  )
+
+sparse_int_as <- plm(
+  formula = sparse_int_as_eq, 
+  data=reg_dat5y, # regression_data_5_year
+  model="within", effect="time"
+  )
+
+# The full model:
+
+full_as_eq <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + 
+    lag(diff(eci), 1) + lag(diff(kof_econ)) + 
+    lag(diff(eci), 1) * lag(diff(Penn_GDP_PPP_log), 1) + 
+    diff(popgrowth) + diff(inv_share) + diff(humancapital)|
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 2) + lag(diff(eci), 2) + 
+    lag(diff(eci), 2) * lag(diff(Penn_GDP_PPP_log), 2) + 
+    lag(diff(kof_econ), 2) + diff(popgrowth) + diff(inv_share) + diff(humancapital)
+  )
+
+full_as <- plm(
+  formula = full_as_eq, 
+  data=reg_dat5y, # regression_data_5_year
+  model="within", effect="time"
+  )
+```
+
+```{r, results='asis'}
+stargazer(
+  sparse_as,
+  sparse_int_as, 
+  full_as,
+  title = "Anderson-Hsiao IV (5-year averages)", label = "tab:ahsio",
+  type = "latex", omit.stat = "f", header = FALSE)
+```
+
+
+This estimator could be expected to yield intermediate
+results between the OLS and the *within*-estimator. The minimal and full model 
+have $\alpha$ in the expected range, yet standard errors are considerable
+Also, I am not sure how to instrument for interaction effects.
+Of course, one could experiment a bit more with the specification, e.g.
+using contemporaneous differences for $ECI$ and $KOF$, to lag the 
+further explanatory variables (depends on our assessment of their degree of
+endogeneity), etc.
+Note that in the present version I instrumented $ECI$, $KOF$, $GROWTH$ and $GDP$ 
+with the past differences, but did not instrument the remaining explanatory 
+variables. This is also one could discuss. Also, one could add the typical
+diagnostics, e.g. instrument relevance. Instrument validity cannot be tested
+in the Anderson-Hsiao framework since the system of instruments is exactly
+identified. It can be tested in the GMM framework below, however.
+
+## Difference GMM
+
+As indicated above, the Anderson-Hsiao estimator is consistent but inefficient.
+It wastes potential instruments and by having its estimates exactly identified 
+by using the same number of instruments than regressors, it does not allow to
+test instrument validity. The Differente-GMM estimator can be seen as an
+extension of the Anderson-Hsiao approach that takes into account longer lags as
+additional instruments and allows for more flexibility in estimating the 
+variance-covariance matrix. In sum, I think, there is little reason to prefer
+the Anderson-Hsiao approach over Diff-GMM in theory, but the latter also has 
+a considerable degrees of freedom (i.e. one can make many mistakes), and it is
+not clear whether its small sample properties of the Diff-GMM really exceed 
+those of the Anderson-Hsiao estimator in all circumstances. This is relevant
+since the small sample properties are particularly poor when the time series
+involced are persistent - which is the case for our application.
+
+I do not delve into the details of GMM here. The estimates are in table
+\ref{tab:diffgmm}.
+I want to stress, however, that there are numerous decisions that we may 
+discuss, e.g.:
+
+* How many lags should be used as GMM (i.e. internal) instrumtens? I have used 
+lags 3 to 8 for the lagged dependent and for the main explanatory
+variables; control variables were not instrumented at all (I started with lag
+3 because otherwise the Sargan test below had too low p values).
+* Which variables should be instrumented at all? I have used GMM instruments 
+the main explanatory variables, 
+yet one may also use 'proper' instruments for some of them or not or more...
+* I did not instrument the interaction term
+* I followed that at least in my view superior approach to use collapsed 
+instrument matrices and the two-step estimation procedure
+* One would need to correct standard errors using the \citet{wind05}-correction,
+resulting in larger standard errors. I did not do this for these cases yet.
+* Probably many more points to be discussed....
+
+```{r}
+min_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + lag(eci, 1) + lag(kof_econ, 1) | 
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + lag(kof_econ, 3:8))
+
+sparse_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci, 1) + lag(kof_econ, 1) + popgrowth + inv_share | 
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + 
+    lag(kof_econ, 3:8))
+  
+sparse_int_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci, 1) + lag(kof_econ, 1) + popgrowth + inv_share + 
+    lag(eci*Penn_GDP_PPP_log, 1) | # lag(eci, 1)*lag(Penn_GDP_PPP_log, 1)
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + 
+    lag(kof_econ, 3:8) + lag(eci*Penn_GDP_PPP_log, 3:8))
+
+full_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci, 1) + lag(kof_econ, 1) + popgrowth + inv_share + humancapital + 
+    lag(eci*Penn_GDP_PPP_log, 1) | 
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + 
+    lag(kof_econ, 3:8) + lag(eci*Penn_GDP_PPP_log, 3:8))
+```
+
+```{r}
+min_abond <- pgmm(
+  formula = min_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+min_abond_sum <- summary(min_abond)
+
+sparse_abond <- pgmm(
+  formula = sparse_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+sparse_abond_sum <- summary(sparse_abond)
+
+sparse_int_abond <- pgmm(
+  formula = sparse_int_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+sparse_int_abond_sum <- summary(sparse_int_abond)
+
+full_abond <- pgmm(
+  formula = full_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+full_abond_sum <- summary(full_abond)
+```
+
+```{r, results='asis'}
+stargazer(
+  min_abond,
+  sparse_abond,
+  sparse_int_abond, 
+  full_abond,
+  title = "Difference GMM (5-year averages)", label = "tab:diffgmm",
+  type = "latex", omit.stat = "f", header = FALSE)
+```
+
+Fällt halt auch alles nicht in die Range in die es fallen sollte...und man 
+kann noch mehr und systematischer mit den
+Lags herumarbeiten um hier überall gut abzuschneiden. Das wäre schon wichtig,
+weil: 
+"Testing whether the Diff-GMM estimates fall into the range between OLS and the
+within estimator is crucial since \citet{Bond2001} show that the Diff-GMM might 
+suffer from finite sample bias if the time series involved are persistent. To test
+whether the resulting estimate lies between the OLS and within estimate, thus,
+serves as an indication for the potential presence of such finite sample bias."
+
+Hier noch ein paar Punkte zu diagnostic tests:
+
+* Weil wir in Differenzen schätzen, sollte der Arellano-Bond Autokorrelationstest 
+auf Autokorrelation zweiter Ordnung einen möglichst hohen p-Wert haben
+* Der p-Wert für den Sargan Test kann nicht groß genug sein
+* Man könnte noch ein paar weitere Tests machen, aber das würde ich nur für
+die Spezifikationen machen, die wir am Ende tatsächlich verwenden
+
+Hier die Übersicht der Tests für die Spezifikationen oben. Alle Werte sind
+p-Werte. Beim Arellano-Bond test geht es um zweiten Grad Autokorrelation,
+beim Sargan-Hansen test um Instrumentenvalidität. In beiden Fällen wollen
+wir bei guter Spezifikation hohe p-Werte sehen.
+
+```{r}
+knitr::kable(tibble(
+  "Modell"=c("Minimal (1)", "Sparse (2)", "Sparse w/ itct. (3)", "Full (4)"),
+  "Arellano-Bond"=c(
+    min_abond_sum[["m2"]][["p.value"]],
+    sparse_abond_sum[["m2"]][["p.value"]],
+    sparse_int_abond_sum[["m2"]][["p.value"]],
+    sparse_int_abond_sum[["m2"]][["p.value"]]),
+  "Sargan-Hansen"=c(
+    min_abond_sum[["sargan"]][["p.value"]],
+    sparse_abond_sum[["sargan"]][["p.value"]],
+    sparse_int_abond_sum[["sargan"]][["p.value"]],
+    sparse_int_abond_sum[["sargan"]][["p.value"]])
+  ),
+  digits = 3, format = "latex", align = "lcc", booktabs = TRUE)
+```
+
+Das bedeutet, dass zumindest die volleren Modelle so gar nicht gehen.
+
+## System GMM
+
+The last model is in principle the one that should be preferred for the 
+estimation of growth models \citep[][]{Bond2001}.
+At the same time, it also comes with strong assumptions, especially on the
+situation in the first period of observation, where countries should already
+be on their equilibrium path \citep[][]{BlundellBond1998, Roodman2009}.
+The simulations in \citet{Roodman2009} are very illustrative on this.
+
+The idea of the system GMM is to address the problem of potentially weak 
+instruments, low efficiency and strong small sample bias of the difference GMM
+by estimating the model not only in differences but also in levels.
+This brings more moment conditions and potentially stronger instruments.
+It is the the estimator that most current studies use that deal with 
+questions comparable to ours. 
+
+Table \ref{tab:sysest} shows the results. The diagnostics are below. It is
+clear that we need to tailor the specification considerably, still. It might
+well be because of the interaction term. I have not come across a single 
+GMM study with an interaction term.
+
+```{r}
+min_sys <- pgmm(
+  formula = min_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+min_sys_sum <- summary(min_sys)
+
+sparse_sys <- pgmm(
+  formula = sparse_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+sparse_sys_sum <- summary(sparse_sys)
+
+sparse_int_sys <- pgmm(
+  formula = sparse_int_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+sparse_int_sys_sum <- summary(sparse_int_sys)
+
+full_sys <- pgmm(
+  formula = full_ab_eq,
+  data=reg_dat5y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+full_sys_sum <- summary(full_sys)
+```
+
+```{r, results='asis'}
+stargazer(
+  min_sys,
+  sparse_sys,
+  sparse_int_sys, 
+  full_sys,
+  title = "System GMM (5-year averages)", label = "tab:sysest",
+  type = "latex", omit.stat = "f", float = T, header = FALSE)
+```
+
+```{r}
+knitr::kable(tibble(
+  "Modell"=c("Minimal (1)", "Sparse (2)", "Sparse w/ itct. (3)", "Full (4)"),
+  "Arellano-Bond (1)"=c(
+    min_sys_sum[["m1"]][["p.value"]],
+    sparse_sys_sum[["m1"]][["p.value"]],
+    sparse_int_sys_sum[["m1"]][["p.value"]],
+    sparse_int_sys_sum[["m1"]][["p.value"]]),
+  "Arellano-Bond (2)"=c(
+    min_sys_sum[["m2"]][["p.value"]],
+    sparse_sys_sum[["m2"]][["p.value"]],
+    sparse_int_sys_sum[["m2"]][["p.value"]],
+    sparse_int_sys_sum[["m2"]][["p.value"]]),
+  "Sargan-Hansen"=c(
+    min_sys_sum[["sargan"]][["p.value"]],
+    sparse_sys_sum[["sargan"]][["p.value"]],
+    sparse_int_sys_sum[["sargan"]][["p.value"]],
+    sparse_int_sys_sum[["sargan"]][["p.value"]])
+  ),
+  digits = 3, format = "latex", align = "lcc", booktabs = TRUE)
+```
+
+# Yearly data
+
+At this stage I replicate the same estimations as in the section before with 
+the yearly data. The interpretation remains largely the same:
+
+## Benchmark models
+
+```{r}
+min_panel <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1), 
+  data=reg_dat1y, model="within",
+  effect="twoways", na.action=na.exclude)
+
+sparse_panel <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1) + 
+    popgrowth + inv_share, 
+  data=reg_dat1y, model="within",
+  effect="twoways", na.action=na.exclude)
+
+sparse_panel_int <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1) + 
+    lag(eci,1) * lag(Penn_GDP_PPP_log, 1) +
+    popgrowth + inv_share, 
+  data=reg_dat1y, model="within",
+  effect="twoways", na.action=na.exclude)
+
+full_panel <- plm(
+  GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + lag(kof_econ, 1) + 
+    lag(eci,1) * lag(Penn_GDP_PPP_log,1) + 
+    popgrowth + humancapital + inv_share,
+  data=reg_dat1y, model="within",
+  effect="twoways", na.action=na.exclude)
+```
+
+```{r, results='asis'}
+stargazer(min_panel, sparse_panel, sparse_panel_int, full_panel, 
+          type = "latex", omit.stat = "f", header = FALSE, float = F)
+```
+
+We next test whether including a lag of the dependent variable can improve 
+upon the results. Results can be found in table \ref{tab:dynpanelyearly}.
+
+```{r}
+min_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci,1) + lag(kof_econ, 1), 
+  data=reg_dat1y, 
+  model="pooling"
+  )
+min_panel <- update(min_ols, model="within", effect="twoways")
+
+sparse_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci,1) + lag(kof_econ, 1) + popgrowth + inv_share, 
+  data=reg_dat1y,
+  model="pooling"
+  )
+sparse_panel <- update(sparse_ols, model="within", effect="twoways")
+
+sparse_int_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci,1) + lag(kof_econ, 1) + lag(eci,1) * lag(Penn_GDP_PPP_log, 1) +
+    popgrowth + inv_share, 
+  data=reg_dat1y, 
+  model="pooling"
+  )
+sparse_int_panel <- update(sparse_int_ols, model="within", effect="twoways")
+
+full_ols <- plm(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) +
+    lag(eci,1) + lag(kof_econ, 1) + lag(eci,1) * lag(Penn_GDP_PPP_log,1) + 
+    popgrowth + humancapital + inv_share,
+  model = "pooling", 
+  data=reg_dat1y, 
+  )
+full_panel <- update(full_ols, model="within", effect="twoways")
+```
+
+```{r, results='asis'}
+stargazer(
+  min_ols, min_panel,
+  sparse_ols, sparse_panel,
+  sparse_int_ols, sparse_int_panel, 
+  full_ols, full_panel,
+  title = "Dynamic panel (yearly data)", header = F, 
+  float.env = "sidewaystable", 
+  label = "tab:dynpanelyearly", float = TRUE,
+  type = "latex", omit.stat = "f")
+```
+
+## Anderson-Hsiao
+
+We check again the level lag and diff lag version:
+
+
+```{r}
+min_ah_level <- plm(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + lag(diff(eci),1) + lag(diff(kof_econ), 1) | 
+    lag(GDP_pc_growth, 2) + lag(Penn_GDP_PPP_log, 2) + lag(eci,2) + lag(kof_econ, 2) , 
+  data=reg_dat1y, 
+  model="within", effect = "time"
+  )
+```
+
+```{r}
+min_ah_diff <- plm(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + lag(diff(eci),1) + lag(diff(kof_econ), 1) | 
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 1) + lag(diff(eci),1) + lag(diff(kof_econ), 1) , 
+  data=reg_dat1y, 
+  model="within", effect = "time"
+  )
+```
+
+```{r, results='asis'}
+stargazer(
+  min_ah_level,
+  min_ah_diff, 
+  title = "Anderson-Hsiao IV (minimal model, yearly data)",
+  type = "latex", omit.stat = "f", float = FALSE, header = FALSE,
+  column.labels = c("Level instruments", "Diff instruments"))
+```
+
+Again, the difference version seems to be superior, although this time both models
+are significant as a whole. Thus, table \ref{tab:ahsioyearly} contains results
+for the difference lags.
+
+```{r}
+sparse_as_eq <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + 
+    lag(diff(eci), 1) + lag(diff(kof_econ), 1) + diff(popgrowth) + diff(inv_share) |
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 2) + lag(diff(eci), 2) + 
+    lag(diff(kof_econ), 2) + diff(popgrowth) + diff(inv_share, 1)
+  )
+
+sparse_as <- plm(
+  formula = sparse_as_eq, 
+  data=reg_dat1y, # regression_data_5_year
+  model="within", effect="time"
+  )
+
+# TODO: how to instrument an interaction term?
+# lag(diff(eci), 1) * lag(diff(Penn_GDP_PPP_log), 1)
+# lag(diff(eci)*diff(Penn_GDP_PPP_log), 1)
+# lag(diff(eci*Penn_GDP_PPP_log), 1)
+
+sparse_int_as_eq <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + 
+    lag(diff(eci), 1) + lag(diff(kof_econ), 1) + 
+    lag(diff(eci), 1) * lag(diff(Penn_GDP_PPP_log), 1) + 
+    diff(popgrowth) + diff(inv_share) |
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 2) + lag(diff(eci), 2) + 
+    lag(diff(eci)*diff(Penn_GDP_PPP_log), 2) + 
+    lag(diff(kof_econ), 2) + diff(popgrowth) + diff(inv_share,)
+  )
+
+sparse_int_as <- plm(
+  formula = sparse_int_as_eq, 
+  data=reg_dat1y, # regression_data_5_year
+  model="within", effect="time"
+  )
+
+# The full model:
+
+full_as_eq <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth), 1) + lag(diff(Penn_GDP_PPP_log), 1) + 
+    lag(diff(eci), 1) + lag(diff(kof_econ)) + 
+    lag(diff(eci), 1) * lag(diff(Penn_GDP_PPP_log), 1) + 
+    diff(popgrowth) + diff(inv_share) + diff(humancapital)|
+    lag(diff(GDP_pc_growth), 2) + lag(diff(Penn_GDP_PPP_log), 2) + lag(diff(eci), 2) + 
+    lag(diff(eci)*diff(Penn_GDP_PPP_log), 2) + 
+    lag(diff(kof_econ), 2) + diff(popgrowth) + diff(inv_share) + diff(humancapital)
+  )
+
+full_as <- plm(
+  formula = full_as_eq, 
+  data=reg_dat1y, # regression_data_5_year
+  model="within", effect="time"
+  )
+```
+
+```{r, results='asis'}
+stargazer(
+  sparse_as,
+  sparse_int_as, 
+  full_as,
+  title = "Anderson-Hsiao IV (yearly data)", label = "tab:ahsioyearly",
+  type = "latex", omit.stat = "f", header = FALSE)
+```
+
+This does not mean, however, that results are more plausible than above.
+
+## Difference GMM
+
+Estimates can be found in table \ref{tab:diffgmmyearly}. The diagnostics are 
+below and they do look much better than above.
+
+```{r}
+min_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + lag(eci, 1) + lag(kof_econ, 1) | 
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + lag(kof_econ, 3:8))
+
+sparse_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci, 1) + lag(kof_econ, 1) + popgrowth + inv_share | 
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + 
+    lag(kof_econ, 3:8))
+  
+sparse_int_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci, 1) + lag(kof_econ, 1) + popgrowth + inv_share + 
+    lag(eci*Penn_GDP_PPP_log, 1) | 
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + 
+    lag(kof_econ, 3:8) + lag(eci*Penn_GDP_PPP_log, 3:8))
+
+full_ab_eq <- Formula::Formula(
+  GDP_pc_growth ~ lag(GDP_pc_growth, 1) + lag(Penn_GDP_PPP_log, 1) + 
+    lag(eci, 1) + lag(kof_econ, 1) + popgrowth + inv_share + humancapital + 
+    lag(eci*Penn_GDP_PPP_log, 1) | 
+    lag(GDP_pc_growth, 3:8) + lag(Penn_GDP_PPP_log, 3:8) + lag(eci,3:8) + 
+    lag(kof_econ, 3:8) + lag(eci*Penn_GDP_PPP_log, 3:8))
+```
+
+```{r}
+min_abond <- pgmm(
+  formula = min_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+min_abond_sum <- summary(min_abond)
+
+sparse_abond <- pgmm(
+  formula = sparse_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+sparse_abond_sum <- summary(sparse_abond)
+
+sparse_int_abond <- pgmm(
+  formula = sparse_int_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+sparse_int_abond_sum <- summary(sparse_int_abond)
+
+full_abond <- pgmm(
+  formula = full_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+full_abond_sum <- summary(full_abond)
+```
+
+```{r, results='asis'}
+stargazer(
+  min_abond,
+  sparse_abond,
+  sparse_int_abond, 
+  full_abond,
+  title = "Difference GMM (yearly data)", label = "tab:diffgmmyearly",
+  type = "latex", omit.stat = "f", header = FALSE)
+```
+
+
+```{r}
+knitr::kable(tibble(
+  "Modell"=c("Minimal (1)", "Sparse (2)", "Sparse w/ itct. (3)", "Full (4)"),
+  "Arellano-Bond"=c(
+    min_abond_sum[["m2"]][["p.value"]],
+    sparse_abond_sum[["m2"]][["p.value"]],
+    sparse_int_abond_sum[["m2"]][["p.value"]],
+    sparse_int_abond_sum[["m2"]][["p.value"]]),
+  "Sargan-Hansen"=c(
+    min_abond_sum[["sargan"]][["p.value"]],
+    sparse_abond_sum[["sargan"]][["p.value"]],
+    sparse_int_abond_sum[["sargan"]][["p.value"]],
+    sparse_int_abond_sum[["sargan"]][["p.value"]])
+  ),
+  digits = 3, format = "latex", align = "lcc", booktabs = TRUE)
+```
+
+## System GMM
+
+Estimates are in table \ref{tab:sysestyearly}, diagnostics below:
+
+```{r}
+min_sys <- pgmm(
+  formula = min_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+min_sys_sum <- summary(min_sys)
+
+sparse_sys <- pgmm(
+  formula = sparse_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+sparse_sys_sum <- summary(sparse_sys)
+
+sparse_int_sys <- pgmm(
+  formula = sparse_int_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+sparse_int_sys_sum <- summary(sparse_int_sys)
+
+full_sys <- pgmm(
+  formula = full_ab_eq,
+  data=reg_dat1y,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+full_sys_sum <- summary(full_sys)
+```
+
+```{r, results='asis'}
+stargazer(
+  min_sys,
+  sparse_sys,
+  sparse_int_sys, 
+  full_sys,
+  title = "System GMM (yearly data)", label = "tab:sysestyearly",
+  type = "latex", omit.stat = "f", float = T, header = FALSE)
+```
+
+```{r}
+knitr::kable(tibble(
+  "Modell"=c("Minimal (1)", "Sparse (2)", "Sparse w/ itct. (3)", "Full (4)"),
+  "Arellano-Bond (1)"=c(
+    min_sys_sum[["m1"]][["p.value"]],
+    sparse_sys_sum[["m1"]][["p.value"]],
+    sparse_int_sys_sum[["m1"]][["p.value"]],
+    sparse_int_sys_sum[["m1"]][["p.value"]]),
+  "Arellano-Bond (2)"=c(
+    min_sys_sum[["m2"]][["p.value"]],
+    sparse_sys_sum[["m2"]][["p.value"]],
+    sparse_int_sys_sum[["m2"]][["p.value"]],
+    sparse_int_sys_sum[["m2"]][["p.value"]]),
+  "Sargan-Hansen"=c(
+    min_sys_sum[["sargan"]][["p.value"]],
+    sparse_sys_sum[["sargan"]][["p.value"]],
+    sparse_int_sys_sum[["sargan"]][["p.value"]],
+    sparse_int_sys_sum[["sargan"]][["p.value"]])
+  ),
+  digits = 3, format = "latex", align = "lcc", booktabs = TRUE)
+```
+
+# Bond data
+
+The specification of the regression equation and interpretation of the
+data is a bit different in this case. The model estimated by \citet{Bond2001} 
+is a bit different to ours since they do not control for the actual per capita
+income level (which is why I removed $\beta_1$ from the equation below).
+Starting from 
+\begin{align*}
+	   \begin{split}
+   \ln(GDPpc_{i,t}) - \ln(GDPpc_{i,t-1}) &= \alpha\ln(GDPpc_{i,t-1}) - \ln(GDPpc_{i,t-1}) \\
+   & + \beta_2 ECI_{i,t-1} + \beta_3 KOF_{i,t-1} + \gamma X_{i,t} + \mu_i + \delta_t + u_{it}
+   \end{split}
+\end{align*}
+ 
+and assuming $y_{it}=\alpha y_{it-1}$ one gets:
+
+\begin{align}
+  \label{eq:bondbase}
+  \begin{split}
+   \Delta \ln(GDPpc_{i,t}) &= (\alpha-1)\ln(GDPpc_{i,t-1}) \\
+   & + \beta_2 ECI_{i,t-1} + \beta_3 KOF_{i,t-1} + \gamma X_{i,t} + \mu_i + \delta_t + u_{it}\nonumber
+   \end{split}\\
+     \begin{split}
+   GROWTH_t &= (\alpha-1)\ln(GDPpc_{i,t-1}) \\
+   & + \beta_2 ECI_{i,t-1} + \beta_3 KOF_{i,t-1} + \gamma X_{i,t} + \mu_i + \delta_t + u_{it}
+   \end{split}
+\end{align}
+
+In their formulation $GDPpc_{i,t-1}$ refers to the value in the
+first year of the same five-year interval, for which $GROWTH_t$ denotes
+the overall growth. 
+Correspondingly, $ECI_{i,t-1}$ and $KOF_{i,t-1}$ are the values
+at the beginning of a five-year interval. 
+The controls in $X_t$ are the means over the interval.
+
+## Benchmark models
+
+In some sense there is no immediate equivalent to the non-dynamic panels
+estimated above since \citet{Bond2001} interpret the data to be a dynamic
+panel simply because of the relationship between growth and GDP per capita
+level from the previous period. Thus, it makes less sense to include a
+'true' autoregressive variable $\Delta \ln(GDPpc_{i,t-1})$ into their 
+model. Although this is certainly something one might discuss.
+The results for the benchmark thus interpreted can be found in table 
+\ref{tab:dynpanelbond}.
+
+```{r}
+min_ols <- plm(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first, 
+  data=reg_dat5y_bond, 
+  model="pooling"
+  )
+min_panel <- update(min_ols, model="within", effect="twoways")
+
+sparse_ols <- plm(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first + popgrowth_mean + invshare_mean, 
+  data=reg_dat5y_bond,
+  model="pooling"
+  )
+sparse_panel <- update(sparse_ols, model="within", effect="twoways")
+
+sparse_int_ols <- plm(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first + 
+    popgrowth_mean + invshare_mean + eci_first * GDPpc_first, 
+  data=reg_dat5y_bond, 
+  model="pooling"
+  )
+sparse_int_panel <- update(sparse_int_ols, model="within", effect="twoways")
+
+full_ols <- plm(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first + 
+    popgrowth_mean + invshare_mean + humancapital_mean + eci_first * GDPpc_first, 
+  model = "pooling", 
+  data=reg_dat5y_bond, 
+  )
+full_panel <- update(full_ols, model="within", effect="twoways")
+```
+
+```{r, results='asis'}
+stargazer(
+  min_ols, min_panel,
+  sparse_ols, sparse_panel,
+  sparse_int_ols, sparse_int_panel, 
+  full_ols, full_panel,
+  title = "Dynamic panel (Bond data)", header = F, 
+  float.env = "sidewaystable", 
+  label = "tab:dynpanelbond", float = TRUE,
+  type = "latex", omit.stat = "f")
+```
+
+## Anderson-Hsiao
+
+We check again the level lag and diff lag version, although I find this logic
+difficult to be apply to the bond data. The difference of growth on the LHS
+is now the difference between growth rates in two periods, and the difference
+in lagged values the difference between starting values of two periods.
+I am not sure whether we should always use one lag more when taking differences.
+Notably, \citet{Bond2001} do not implement this estimator at all.
+
+```{r}
+min_ah_level <- plm(
+  diff(GDPpc_growth) ~ diff(GDPpc_first) + diff(eci_first) + diff(kof_econ_first) | 
+    lag(GDPpc_first, 1) + lag(eci_first, 1) + lag(kof_econ_first, 1) , 
+  data=reg_dat5y_bond, 
+  model="within", effect = "time"
+  )
+```
+
+```{r}
+min_ah_diff <- plm(
+  diff(GDPpc_growth) ~ diff(GDPpc_first) + diff(eci_first) + diff(kof_econ_first) | 
+    lag(diff(GDPpc_first), 1) + lag(diff(eci_first), 1) + lag(diff(kof_econ_first), 1), 
+  data=reg_dat5y_bond, 
+  model="within", effect = "time"
+  )
+```
+
+```{r, results='asis'}
+stargazer(
+  min_ah_level,
+  min_ah_diff, 
+  title = "Anderson-Hsiao IV (minimal model, Bond data)",
+  type = "latex", omit.stat = "f", float = FALSE, header = FALSE,
+  column.labels = c("Level instruments", "Diff instruments"))
+```
+
+The difference version seems to be superior. 
+The test for joint significance of all regressors of the difference versions
+has a p-value of 
+`r round(unname(summary(min_ah_diff)$fstatistic$p.value), 3)`, 
+while the levels version performs extremely poorly (p value of 
+`r round(unname(summary(min_ah_level)$fstatistic$p.value), 3)`).
+Thus, table \ref{tab:ahsiobond} contains results
+for the difference lags.
+
+
+```{r}
+sparse_as_eq <- Formula::Formula(
+  diff(GDPpc_growth) ~ diff(GDPpc_first) + diff(eci_first) + diff(kof_econ_first) +
+    diff(popgrowth_mean) + diff(invshare_mean) | 
+    lag(diff(GDPpc_first), 1) + lag(diff(eci_first), 1) + lag(diff(kof_econ_first), 1) +
+    diff(popgrowth_mean) + diff(invshare_mean)
+  )
+
+sparse_as <- plm(
+  formula = sparse_as_eq, 
+  data=reg_dat5y_bond, # regression_data_5_year
+  model="within", effect="time"
+  )
+
+# TODO: how to instrument an interaction term?
+
+sparse_int_as_eq <- Formula::Formula(
+    diff(GDPpc_growth) ~ diff(GDPpc_first) + diff(eci_first) + diff(kof_econ_first) +
+    diff(popgrowth_mean) + diff(invshare_mean) + diff(eci_first)*diff(GDPpc_first) | 
+    lag(diff(GDPpc_first), 1) + lag(diff(eci_first), 1) + lag(diff(kof_econ_first), 1) +
+    diff(popgrowth_mean) + diff(invshare_mean) + lag(diff(eci_first)*diff(GDPpc_first), 1)
+  )
+
+sparse_int_as <- plm(
+  formula = sparse_int_as_eq, 
+  data=reg_dat5y_bond, # regression_data_5_year
+  model="within", effect="time"
+  )
+
+# The full model:
+full_as_eq <- Formula::Formula(
+    diff(GDPpc_growth) ~ diff(GDPpc_first) + diff(eci_first) + diff(kof_econ_first) +
+      diff(popgrowth_mean) + diff(invshare_mean) + diff(humancapital_mean) + 
+      diff(eci_first)*diff(GDPpc_first) | 
+      lag(diff(GDPpc_first), 1) + lag(diff(eci_first), 1) + 
+      lag(diff(kof_econ_first), 1) + diff(popgrowth_mean) + diff(invshare_mean) + 
+      diff(humancapital_mean) + lag(diff(eci_first)*diff(GDPpc_first), 1)
+  )
+
+full_as <- plm(
+  formula = full_as_eq, 
+  data=reg_dat5y_bond, # regression_data_5_year
+  model="within", effect="time"
+  )
+```
+
+```{r, results='asis'}
+stargazer(
+  sparse_as,
+  sparse_int_as, 
+  full_as,
+  title = "Anderson-Hsiao IV (Bond data)", label = "tab:ahsiobond",
+  type = "latex", omit.stat = "f", header = FALSE)
+```
+
+These results are indeed *very* disappointing, so we might discuss the logic
+in a bit more depth.
+
+## Difference GMM
+
+Estimates can be found in table \ref{tab:diffgmmbond}. The diagnostics are 
+below. As before, the tests are not very convincing, and more discussion about
+the specification is needed.
+
+```{r}
+min_ab_eq <- Formula::Formula(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first | 
+    lag(GDPpc_first, 2:8) + lag(eci_first, 2:8) + lag(kof_econ_first, 2:8)
+  )
+
+sparse_ab_eq <- Formula::Formula(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first +
+    popgrowth_mean + invshare_mean | 
+    lag(GDPpc_first, 2:8) + lag(eci_first, 2:8) + lag(kof_econ_first, 2:8) ) 
+  
+sparse_int_ab_eq <- Formula::Formula(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first + 
+    popgrowth_mean + invshare_mean + eci_first*GDPpc_first | 
+    lag(GDPpc_first, 2:8) + lag(eci_first, 2:8) + lag(kof_econ_first, 2:8) + 
+    lag(eci_first*GDPpc_first, 2:8)
+  )
+
+full_ab_eq <- Formula::Formula(
+  GDPpc_growth ~ GDPpc_first + eci_first + kof_econ_first + 
+    popgrowth_mean + invshare_mean + humancapital_mean + eci_first*GDPpc_first | 
+    lag(GDPpc_first, 2:8) + lag(eci_first, 2:8) + lag(kof_econ_first, 2:8) + 
+    lag(eci_first*GDPpc_first, 2:8)
+  )
+```
+
+```{r}
+min_abond <- pgmm(
+  formula = min_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+min_abond_sum <- summary(min_abond)
+
+sparse_abond <- pgmm(
+  formula = sparse_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+sparse_abond_sum <- summary(sparse_abond)
+
+sparse_int_abond <- pgmm(
+  formula = sparse_int_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+sparse_int_abond_sum <- summary(sparse_int_abond)
+
+full_abond <- pgmm(
+  formula = full_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE)
+full_abond_sum <- summary(full_abond)
+```
+
+```{r, results='asis'}
+stargazer(
+  min_abond,
+  sparse_abond,
+  sparse_int_abond, 
+  full_abond,
+  title = "Difference GMM (Bond data)", label = "tab:diffgmmbond",
+  type = "latex", omit.stat = "f", header = FALSE)
+```
+
+
+```{r}
+knitr::kable(tibble(
+  "Modell"=c("Minimal (1)", "Sparse (2)", "Sparse w/ itct. (3)", "Full (4)"),
+  "Arellano-Bond"=c(
+    min_abond_sum[["m2"]][["p.value"]],
+    sparse_abond_sum[["m2"]][["p.value"]],
+    sparse_int_abond_sum[["m2"]][["p.value"]],
+    sparse_int_abond_sum[["m2"]][["p.value"]]),
+  "Sargan-Hansen"=c(
+    min_abond_sum[["sargan"]][["p.value"]],
+    sparse_abond_sum[["sargan"]][["p.value"]],
+    sparse_int_abond_sum[["sargan"]][["p.value"]],
+    sparse_int_abond_sum[["sargan"]][["p.value"]])
+  ),
+  digits = 3, format = "latex", align = "lcc", booktabs = TRUE)
+```
+
+## System GMM
+
+Estimates are in table \ref{tab:sysestyearly}, diagnostics below:
+
+```{r}
+min_sys <- pgmm(
+  formula = min_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+min_sys_sum <- summary(min_sys)
+
+sparse_sys <- pgmm(
+  formula = sparse_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+sparse_sys_sum <- summary(sparse_sys)
+
+sparse_int_sys <- pgmm(
+  formula = sparse_int_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+sparse_int_sys_sum <- summary(sparse_int_sys)
+
+full_sys <- pgmm(
+  formula = full_ab_eq,
+  data=reg_dat5y_bond,
+  model = "twostep", effect = "twoways", collapse = TRUE, transformation = "ld")
+full_sys_sum <- summary(full_sys)
+```
+
+```{r, results='asis'}
+stargazer(
+  min_sys,
+  sparse_sys,
+  sparse_int_sys, 
+  full_sys,
+  title = "System GMM (yearly data)", label = "tab:sysestyearly",
+  type = "latex", omit.stat = "f", float = T, header = FALSE)
+```
+
+```{r}
+knitr::kable(tibble(
+  "Modell"=c("Minimal (1)", "Sparse (2)", "Sparse w/ itct. (3)", "Full (4)"),
+  "Arellano-Bond (1)"=c(
+    min_sys_sum[["m1"]][["p.value"]],
+    sparse_sys_sum[["m1"]][["p.value"]],
+    sparse_int_sys_sum[["m1"]][["p.value"]],
+    sparse_int_sys_sum[["m1"]][["p.value"]]),
+  "Arellano-Bond (2)"=c(
+    min_sys_sum[["m2"]][["p.value"]],
+    sparse_sys_sum[["m2"]][["p.value"]],
+    sparse_int_sys_sum[["m2"]][["p.value"]],
+    sparse_int_sys_sum[["m2"]][["p.value"]]),
+  "Sargan-Hansen"=c(
+    min_sys_sum[["sargan"]][["p.value"]],
+    sparse_sys_sum[["sargan"]][["p.value"]],
+    sparse_int_sys_sum[["sargan"]][["p.value"]],
+    sparse_int_sys_sum[["sargan"]][["p.value"]])
+  ),
+  digits = 3, format = "latex", align = "lcc", booktabs = TRUE)
+```
+
+Note: I do not think the AR(1) test is meaningful here, yet the results are
+crap due to the Sargan-Hansen test anyways...

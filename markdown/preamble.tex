@@ -1,0 +1,72 @@
+%\documentclass{article}
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{array}       % for more column options in tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{amsmath}
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{placeins} % To get command \FloatBarrier
+\usepackage{lipsum}
+\usepackage{booktabs}
+\usepackage{dcolumn}
+%\usepackage[table]{xcolor}
+%\definecolor{NiceBlue}{RGB}{0, 76, 147}
+%\definecolor{NiceRed}{RGB}{255, 26, 26}
+%\definecolor{NiceGreen}{RGB}{41, 163, 41}
+%\definecolor{NiceYellow}{RGB}{230, 153, 0}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks = true,
+    linkcolor = {blue},
+    citecolor = {blue},
+    urlcolor = {blue}
+    }
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[autostyle]{csquotes}
+\usepackage[onehalfspacing]{setspace}
+
+\usepackage{multirow, subfig}
+\usepackage{rotating}
+\usepackage{tabularx}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}} 
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}} 
+\usepackage{ragged2e}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\usepackage[autostyle]{csquotes}
+\usepackage{natbib}
+\usepackage{doi}
+\bibliographystyle{authoryeardoi}
+\usepackage{authblk}
+\usepackage{comment}
+
+\usepackage{todonotes}
+
+ 
+\newcommand{\todoA}[1]{
+\todo[color=green!50!gray]{A: #1}
+}
+
+\newcommand{\inlineA}[1]{
+\todo[color=green!50!gray,author=A, inline]{ #1}
+}
+
+\newcommand{\commentA}[1]{{\color{green!40!gray} A: #1}}
+
+\newcommand{\toC}[1]{
+\todo[color=blue!30]{C: #1}
+}
+
+\newcommand{\inC}[1]{
+\todo[color=blue!30,author=C, inline]{ #1}
+}
+
+\newcommand{\coC}[1]{{\color{blue!70!gray} C: #1}}
+\usepackage{microtype} 

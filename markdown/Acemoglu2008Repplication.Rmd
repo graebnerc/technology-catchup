@@ -1,0 +1,135 @@
+---
+title: "Replication of Bond et al 2001"
+author: "Claudius"
+date: "5/27/2021"
+output:
+  pdf_document:
+    includes:
+      in_header: preamble.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(plm)
+library(here)
+library(pder)
+library(data.table)
+library(stargazer)
+```
+
+```{r}
+data("DemocracyIncome", package = "pder")
+```
+
+```{r, eval=FALSE, echo=FALSE}
+DemocracyIncome2 <- fread(
+  here("data/acemoglu2001.csv"), 
+  sep = ";", dec = ",", 
+  select = c(
+    "sample"="double", 
+    "country"="character", 
+    "year"="factor", 
+    "year_numeric"="double", 
+    "fhpolrigaug"="double", 
+    "lrgdpch"="double")
+  ) %>%
+  rename(
+    income=fhpolrigaug,
+    democracy=lrgdpch
+  ) %>%
+  mutate(
+    year2=as.double(year)
+  )
+```
+
+## General setting
+
+The econometric model is given as follows:
+
+$$d_{it} = \alpha d_{it-1} + \gamma y_{it-1} + \boldsymbol{x}'\boldsymbol{\beta} + \mu_t + \delta_i + u_{it}$$
+
+where $d_{it}$ represents the democracy index of country $i$ in year $t$,
+$\alpha$ is the autoregressive parameter to be estimated (and which accounts 
+for persistency and mean-reverting dynamics).
+$\gamma$ is the parameter on the impact of lagged income $y$.
+It is the main parameter of interest in this study.
+$\boldsymbol{x}'$ contains additional controls,
+$\mu_t$ are time, and $\delta_i$ are country fixed effects.
+The idiosyncratic error is $u_{it}$.
+
+In the following we replicate the first five models of table 2 in the main paper.
+
+## Replication of the main results
+
+### Pooled OLS
+
+The POLS model does not consider any country fixed effects (i.e. excludes 
+$\delta_i$):
+
+```{r}
+pols_model <- plm(
+  democracy ~ lag(democracy) + lag(income), model = "within", 
+  data = DemocracyIncome, #index = c("country", "year_numeric"),
+  subset = sample==1, effect = "time")
+pols_model
+```
+
+```{r, eval=FALSE, echo=FALSE}
+pols_model <- plm(
+  democracy ~ lag(democracy) + lag(income), model = "within", 
+  data = DemocracyIncome2, index = c("country", "year2"),
+  subset = sample==1, effect = "time")
+pols_model
+```
+
+### Within model
+
+The *within*-model is the same as the POLS model but with $\delta_i$
+included:
+
+```{r}
+within_model <- plm(
+  democracy ~ lag(democracy) + lag(income), model = "within", 
+  data = DemocracyIncome, subset = sample==1, effect = "twoways")
+within_model
+```
+
+## Anderson-Hsiao
+
+This is an estimation estimates the model from above in differences:
+
+$$\Delta d_{ut} = \alpha \Delta d_{it-1} + \gamma\Delta y_{it-1} + \Delta + \boldsymbol{x}'\boldsymbol{\beta} + \Delta  \mu_t + \Delta u_{it}$$
+
+Using differences eliminates the country specific error component $\delta_i$.
+Nevertheless, $\Delta d_{it-1}$ and $\Delta y_{it-1}$ are correlated with 
+$u_{it}$ by construction.
+To remedy this, $y_{it-1}$ is used as an instrument for $\Delta y_{it-1}$ and 
+$d_{it-2}$ is used as an instrument for $\Delta d_{it-1}$:
+
+```{r}
+ahsiao_model <- plm(
+  diff(democracy) ~ lag(diff(democracy)) + lag(diff(income)) | 
+    lag(democracy, 2) + lag(income, 2), 
+  data = DemocracyIncome, subset = sample==1, 
+  model = "within", effect = "time")
+ahsiao_model
+```
+
+### Arellano Bond
+
+```{r}
+abond_model <- pgmm(
+  democracy ~ lag(democracy) + lag(income) | lag(democracy, 2:99) | lag(income, 2), 
+  data = DemocracyIncome, subset = sample==1, effect = "twoways", model = "twostep")
+summary(abond_model)
+```
+
+
+```{r, results='asis'}
+stargazer(
+  pols_model, within_model, ahsiao_model, abond_model)
+```
+

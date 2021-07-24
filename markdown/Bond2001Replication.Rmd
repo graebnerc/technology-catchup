@@ -1,0 +1,126 @@
+---
+title: "Replication of Bond et al 2001"
+author: "Claudius"
+date: "5/27/2021"
+output:
+  pdf_document:
+    includes:
+      in_header: preamble.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+library(plm)
+library(here)
+#library(tidyverse)
+library(pder)
+```
+
+```{r}
+data(Solow, package = "pder")
+data("DemocracyIncome", package = "pder")
+```
+
+## R Markdown
+
+The growth equation estimated is given by:
+
+\begin{align}
+\label{eq:growthregdiff}
+  \Delta y_{it} = \gamma_t + (\alpha - 1) y_{i,t-1} + x'_{it}\beta + \eta_i + v_{it}
+\end{align}
+
+or in levels
+
+\begin{align}
+  \label{eq:growthreglevel}
+  y_{it} = \gamma_t + \alpha y_{i,t-1} + x'_{it}\beta + \eta_i + v_{it}
+\end{align}
+
+where $\Delta y_{it}$ is the log difference of per capita GDP over a five year 
+period.
+$y_{i,t-1}$ is the starting value of GDP per capita in this five year period in
+logs.
+$x_{i,t}$ contains further explanatory variables that are measured during or at
+the start of the period.
+Common choices in the growth context include the investment rate or population 
+growth.^[According to \citet[15][]{Bond2001}, one often includes population 
+growth plus $0.05$, "where $0.05$ represents the sum of a common exogenous rate
+of technical change ($g$) and a common depreciation rate ($\delta$)".]
+
+Taking equation \eqref{eq:growthreglevel} in first differences we have:
+
+\begin{align}
+  \label{eq:growthregleveldiff}
+  y_{it} - y_{i,t-1} &= \gamma_t - \gamma_{t-1} + \alpha y_{i,t-1} - \alpha y_{i,t-2} + x'_{it}\beta - x'_{i,t-1}\beta + \eta_i - \eta_i + v_{it} - v_{i,t-1}\nonumber\\
+  \Delta y_{it} &= \gamma_t - \gamma_{t-1} + \alpha \Delta y_{i,t-1} + \Delta x'_{it}\beta + \Delta v_{it}
+\end{align}
+
+(Discussion of Blundell-Bond requirement in \citet{Roodman2009}).
+
+```{r}
+dh_formula <- Formula::Formula(
+  diff(democracy) ~ lag(diff(democracy)) + lag(diff(income)) | 
+    lag(democracy, 2) + lag(income, 2))
+
+dem_hsia <- plm::plm(
+  formula = dh_formula, 
+  model = "within", effect = "time", 
+  data = DemocracyIncome, index = c("country", "year"), subset = sample == 1)
+
+ols_model <- plm::plm(
+  formula = lgdp ~ lag(lgdp, 5) + lsrate + lpopg, 
+  data = Solow, index = c("id", "year"),
+  model = "pooling") # , effect = "twoways"
+```
+
+```{r}
+ols_model <- plm::plm(
+  formula = lgdp - lag(lgdp, 5) ~ lag(lgdp, 5) + lsrate + lpopg, 
+  data = Solow, index = c("id", "year"),
+  model = "pooling") # , effect = "twoways"
+summary(ols_model)
+```
+
+```{r}
+within_model <- plm::plm(
+  formula = lgdp - lag(lgdp, 5) ~ lag(lgdp, 10) + lsrate + lpopg, 
+  data = Solow, index = c("id", "year"),
+  model = "within", effect = "individual")
+summary(within_model)
+```
+
+```{r}
+solow_man <- Solow %>%
+  group_by(id) %>%
+  dplyr::mutate(lgdp_diff = lgdp - dplyr::lag(lgdp))
+```
+
+```{r}
+ols_reg1 <- plm(
+  formula = lgdp_diff ~ lag(lgdp, 1) + lsrate + lpopg, 
+  data = solow_man, model = "pooling", index = c("id", "year"))
+summary(ols_reg1)
+```
+
+```{r}
+# ols_eq1 <- formula()
+with1_reg1 <- plm(formula = lgdp ~ lag(lgdp) + lsrate + lpopg, data = Solow, model = "pooling")
+summary(ols_reg1)
+```
+
+```{r}
+reg_eq1 <- Formula::Formula(
+  diff(lgdp) ~ diff(lsrate) + diff(lpopg) | lag(lgdp, 2:99)
+)
+plm::pgmm(
+  formula = reg_eq1, data = Solow, index = c("id", "year"),
+  model = "onestep") # , effect = "twoways"
+```
+
+
+
+

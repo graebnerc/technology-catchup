@@ -13,5 +13,9 @@ output/tex/*.pdf
 output/tex/*.tex
 output/*.pdf
 output/*.tex
+output/*.aux
+output/*.sta
 output/log.txt
 output/.texpadtmp
+*.aux
+*.log

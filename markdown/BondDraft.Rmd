@@ -1,0 +1,170 @@
+
+## Estimation with Bond data
+
+\citet{Bond2001} use a similar baseline equation as compared to 
+\eqref{eq:baseline}:
+
+\begin{align}
+\label{eq:growthregdifforig}
+  \Delta GDPpc_{it} = (\alpha - 1) GDPpc_{i,t-1} + x'_{it}\beta + \mu_i + \delta_t + v_{it}
+\end{align}
+
+where $\Delta GDPpc_{it}$ is the log difference in per capita GDP over a five-year
+period and $GDPpc_{i,t-1}$ is the per capita GDP at the beginning of the period.
+In their model, they use as mandatory control variables the saving rate and 
+population growth.^[According to \citet[15][]{Bond2001}, one often includes population 
+growth plus $0.05$, "where $0.05$ represents the sum of a common exogenous rate
+of technical change ($g$) and a common depreciation rate ($\delta$)".]
+
+For our case I have amended equation \eqref{growthregdifforig} to include only ECI and KOF as
+control variables:
+
+\begin{align}
+\label{eq:growthregdiffadpt}
+  \Delta GDPpc_{it} = \alpha GDPpc_{i,t-1} + \beta_1 ECI_{i, t-1} + 
+  \beta_2 KOF_{i, t-1} + \mu_i + \delta_t + v_{it}
+\end{align}
+
+In the context of a dynamic panel, the bias of the within model should
+be negative, in contrast to the OLS model, which suffers from positive bias. 
+To this end, the two models are estimated as benchmarks that can be used
+to test the plausibility of alternative estimates.
+The first alternative model I compute is the consistent but less efficient 
+Anderson-Hsiao estimator, which estimates the model in differences:
+
+\begin{align}
+  \label{eq:growthregdiffahsiao}
+    \Delta GDPpc_{it} = \alpha \Delta GDPpc_{i,t} + \beta_1 \Delta ECI_{i, t} + 
+  \beta_2 \Delta KOF_{i, t} + \delta_t + v_{it}
+\end{align}
+
+* Frage: ist das hier der richtige Umgang mit Wachstum?
+
+but where $GDPpc_{i,t-1}$ is used as an instrument for $\Delta GDPpc_{i,t}$.
+Alternatively I do the same with $GDPpc_{i,t-2}$ as alternative instruments.
+
+This estimation is a bit tricky and I am not sure whether I interpret the
+variables correctly. 
+The results using the standard instrumental approach is not all too plausible
+since the allegedly AH-estimates do not always fall between the OLS- and
+Within-estimates...
+
+```{r}
+reg_eq <- as.formula(
+  "GDPpc_diff ~ GDPpc_first + eci_first + kof_econ_first")
+
+ols_reg_bond <- plm(
+  formula = reg_eq, data = reg_dat5y_bond, model = "pooling")
+
+within_reg_bond <- plm(
+  formula = reg_eq, data = reg_dat5y_bond, model = "within",
+  effect = "twoways")
+```
+
+```{r}
+ahsiao_eq_bond <- Formula::Formula(
+  GDPpc_diff ~ diff(GDPpc_first) + eci_diff + kof_econ_diff | 
+    lag(GDPpc_first, 1) + lag(eci_first, 1) + lag(kof_econ_first, 1))
+
+ahsiao_eq_bond_alt <- Formula::Formula(
+  GDPpc_diff ~ diff(GDPpc_first) + eci_diff + kof_econ_diff | 
+    lag(GDPpc_first, 2) + lag(eci_first, 2) + lag(kof_econ_first, 2))
+
+ahsiao_reg_bond <- plm(
+  formula = ahsiao_eq_bond, 
+  model = "within", effect = "time", 
+  data = reg_dat5y_bond, index = c("ccode", "period_id"))
+
+ahsiao_reg_bond_alt <- plm(
+  formula = ahsiao_eq_bond_alt, 
+  model = "within", effect = "time", 
+  data = reg_dat5y_bond, index = c("ccode", "period_id"))
+```
+
+
+```{r, results='asis'}
+stargazer(
+  ols_reg_bond, within_reg_bond, ahsiao_reg_bond,ahsiao_reg_bond_alt,
+  type = "latex", style = "ajps", float = F,
+  model.numbers = F, omit.stat = "f", header = FALSE,
+   title = "Estimation with 5-year data as in Bond et al.",
+  column.labels = c("OLS", "Within", "AHsiao", "AHsiao (2lags)"))
+```
+
+## Estimation with yearly data
+
+I now estimate the equations above, adopted for the case where we have yearly
+data. The **main question** here was as to whether include both the lagged 
+growth rate and/or the lag of the per capita income in levels.
+
+```{r}
+reg_eq <- as.formula(
+  "GDP_pc_growth ~ lag(GDP_pc_growth) + lag(Penn_GDP_PPP_log) + lag(eci) + lag(KOF_econ)")
+
+ols_reg_1y <- plm(
+  formula = reg_eq, data = reg_dat1y, model = "pooling")
+
+within_reg_1y <- plm(
+  formula = reg_eq, data = reg_dat1y, model = "within",
+  effect = "twoways")
+```
+
+```{r}
+ahsiao_eq_bond <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth)) + lag(diff(Penn_GDP_PPP_log)) + lag(diff(eci)) + lag(diff(KOF_econ)) | 
+    lag(GDP_pc_growth, 2) + lag(Penn_GDP_PPP_log, 2) + lag(eci, 2) + lag(KOF_econ, 2))
+
+ahsiao_reg_1y <- plm(
+  formula = ahsiao_eq_bond, 
+  model = "within", effect = "twoways", 
+  data = reg_dat1y)
+```
+
+Again, the results suffer from the same problem as above, at least for the ECI
+and KOF data.
+
+```{r, results='asis'}
+stargazer(
+  ols_reg_1y, within_reg_1y, ahsiao_reg_1y,
+  type = "latex", style = "ajps", float = F,
+  model.numbers = F, omit.stat = "f", header = FALSE,
+  title = "Estimation with yearly data",
+  column.labels = c("OLS", "Within", "AndersonHsiao"))
+```
+
+I do the same without including the GDP level, although this is probably
+less useful for the topic of the convergence paper.
+
+```{r}
+reg_eq <- as.formula(
+  "GDP_pc_growth ~ lag(GDP_pc_growth) + lag(eci) + lag(KOF_econ)")
+
+ols_reg_1y <- plm(
+  formula = reg_eq, data = reg_dat1y, model = "pooling")
+
+within_reg_1y <- plm(
+  formula = reg_eq, data = reg_dat1y, model = "within",
+  effect = "twoways")
+```
+
+```{r}
+ahsiao_eq_bond <- Formula::Formula(
+  diff(GDP_pc_growth) ~ lag(diff(GDP_pc_growth)) + lag(diff(eci)) + lag(diff(KOF_econ)) | 
+    lag(GDP_pc_growth, 2) + lag(eci, 2) + lag(KOF_econ, 2))
+
+ahsiao_reg_1y <- plm(
+  formula = ahsiao_eq_bond, 
+  model = "within", effect = "twoways", 
+  data = reg_dat1y)
+```
+
+Again, the results suffer from the same problem as above:
+
+```{r, results='asis'}
+stargazer(
+  ols_reg_1y, within_reg_1y, ahsiao_reg_1y,
+  type = "latex", style = "ajps", float = F,
+  model.numbers = F, omit.stat = "f", header = FALSE,
+  title = "Estimation with yearly data (w/o GDP level)",
+  column.labels = c("OLS", "Within", "AndersonHsiao"))
+```
