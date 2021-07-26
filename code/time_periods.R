@@ -9,11 +9,17 @@ suppressPackageStartupMessages(library(plm))
 suppressPackageStartupMessages(library(margins))
 source(here("code/regressions_funs.R"))
 
-compute_estimates <- TRUE # If TRUE step 1 below gets computed
+compute_estimates <- FALSE # If TRUE step 1 below gets computed
 # This takes some time, so only reasonable if underlying regressions changed
+make_marg_plot_data <- TRUE # If TRUE, computes marginal effect plot data
+# Takes even longer, so use carefully!
+
 variable_of_interest <- "eci"#  "eci" # "GDP_pc_PPP_log" 
 analysis_result_file <- here(
   paste0("output/heatmaps/estimations_", variable_of_interest, ".csv"))
+analysis_result_file_mpdata <- here(
+  paste0("output/heatmaps/mpdata_", variable_of_interest, ".csv"))
+
 # 1. Compute the estimates (optional)------------
 
 if (compute_estimates){
@@ -139,13 +145,17 @@ if (compute_estimates){
   end_year <- 2014
   
   min_range <- 1962:2012
+  # min_range <- 1980:1981
 
   est_list <- list()
+  if (make_marg_plot_data){
+    marg_plots <- list()
+  }
   for (mi in min_range){
     for (ma in ((mi+4):2016)) {
       print(paste(mi, "-", ma))
       
-      full_reg_results <- tryCatch(expr = {
+      marg_plot_full_reg_results <- tryCatch(expr = {
         
         current_data <- get_reg_data(
           init_data = base_data_reg, 
@@ -164,7 +174,7 @@ if (compute_estimates){
         mem_marg_sum <- summary(full_reg[["mem_marg"]])
         
         
-        full_reg_results <- list(
+        marg_plot_full_reg_results[["full_reg_results"]] <- list(
           var_of_interest = variable_of_interest,
           estimate_ =  full_reg[["reg"]][["coefficients"]][[variable_of_interest]],
           pvalue_ = full_reg[["pvals"]][[1]][[variable_of_interest]],
@@ -177,13 +187,21 @@ if (compute_estimates){
           mem_pval = unname(filter(tibble(mem_marg_sum),
                                    factor==variable_of_interest)[["p"]])
         )
+        if (make_marg_plot_data){
+          marg_plot_full_reg_results[["current_marg_plot"]] <- make_reg(
+            reg_formula = regr_form, reg_data=current_data, get_marg_plot=TRUE, 
+            marg_plot_dx="eci", marg_plot_x="GDP_pc_PPP_log",
+            marg_plot_xvals=seq(6, 11, 0.1), first_year=mi, last_year=ma)
+        }
+        
+        marg_plot_full_reg_results
       }, 
       error=function(cond) {
         message(paste("Error with estimation for the period:", mi, "-", ma))
         message("Here's the original error message:")
         message(cond)
-        
-        full_reg_results <- list(
+        marg_plot_full_reg_results <- list()
+        marg_plot_full_reg_results[["full_reg_results"]] <- list(
           var_of_interest = variable_of_interest,
           estimate_ =  NA,
           pvalue_ = NA,
@@ -192,9 +210,13 @@ if (compute_estimates){
           mem_est = NA,
           mem_pval= NA
         )
-        return(full_reg_results)
+        if (make_marg_plot_data){
+          marg_plot_full_reg_results[["current_marg_plot"]] <- NA
+        }
+        return(marg_plot_full_reg_results)
       }
       )
+      full_reg_results <- marg_plot_full_reg_results[["full_reg_results"]]
       
       res_table <- tibble::tibble(
         start_year = mi, 
@@ -209,11 +231,20 @@ if (compute_estimates){
       )
       
       est_list[[paste0(mi, "_", ma)]] <- res_table
+      if (make_marg_plot_data){
+        marg_plots[[paste0(mi, "_", ma)]] <- marg_plot_full_reg_results[["current_marg_plot"]]
+      }
+      
     }
   }
   
   final_eci <- data.table::rbindlist(est_list)
   fwrite(final_eci, file = analysis_result_file)
+  if (make_marg_plot_data){
+    marg_plots_nonNA <- marg_plots[!is.na(marg_plots)]
+    final_mpdata <- dplyr::bind_rows(marg_plots_nonNA)
+    fwrite(final_mpdata, file = analysis_result_file_mpdata)
+  }
 }
 
 # 2. Creation of the heatmap---------------------
@@ -226,13 +257,16 @@ final_eci <- fread(analysis_result_file, select = c(
   "mem_estimate"="double", "mem_pvalue"="double"
   ))
 
-for (marg_effect in c("AME", "MEM")){
+for (marg_effect in c("AME", "MEM", "Beta")){
   if (marg_effect=="AME"){
     marg_est <- "ame_estimate"
     marg_pval <- "ame_pvalue"
   } else if (marg_effect=="MEM"){
     marg_est <- "mem_estimate"
     marg_pval <- "mem_pvalue"
+  } else if (marg_effect=="Beta"){
+    marg_est <- "estimate"
+    marg_pval <- "pvalue"
   } else {
     stop("WRONG MARG EFFECT SPECIFIED!!!")
   }
@@ -309,3 +343,106 @@ for (marg_effect in c("AME", "MEM")){
                   "_heatmap_v2_", marg_effect, ".pdf")), 
          height = 6, width = 5)
 }
+
+# 3. Creation of overall marginal effects plots------------
+make_ggplot <- function(data, per_cons){
+  ggplot(data = data, 
+         mapping = aes(x=xvals, y=yvals, group=years, color=slope)) +
+    geom_line(alpha=0.25) +
+    labs(title = per_cons, x="Income level", y="Marg effect of ECI") +
+    coord_cartesian(ylim = c(-2.5, 5)) +
+    scale_color_manual(values = c("negative"="#e60000", "positive"="#004d00")) +
+    theme_bw() +
+    theme(
+      legend.title = element_blank(), 
+      legend.position = "none", 
+      plot.title = element_text(size=10),
+      panel.border = element_blank(),
+      axis.line = element_line())
+}
+
+mpdata <- fread(file = analysis_result_file_mpdata, 
+                colClasses = c(rep("double", 4), rep("character", 2)))
+
+effect_slope <- mpdata %>%
+  select(all_of(c("xvals", "yvals", "years"))) %>%
+  filter(
+    xvals %in% c(6.0, 11.0)
+  ) %>%
+  pivot_wider(id_cols = "years", names_from = "xvals", values_from = "yvals") %>%
+  mutate(
+    slope = ifelse(`11` > `6`, "positive", 
+                   ifelse(`11` < `6`, "negative", "horizontal"))
+  ) %>%
+  select(all_of(c("years", "slope")))
+
+positive_slope_years <- effect_slope %>%
+  filter(slope=="positive") %>%
+  pull("years")
+
+negative_slope_years <- effect_slope %>%
+  filter(slope=="negative") %>%
+  pull("years")
+
+horizontal_slope_years <- effect_slope %>%
+  filter(slope=="horizontal") %>%
+  pull("years")
+
+mpdata_plot <- left_join(mpdata, effect_slope, by = "years") %>%
+  mutate(
+    first_year = as.double(substr(years, 1, 4)),
+    last_year = as.double(substr(years, 6, 9)),
+    period = ifelse(
+      first_year %in% 1962:1973, "From 1962-1973 until later", ifelse(
+        first_year %in% 1974:1984 & last_year<1991, "From 1974-1984 until 1990", ifelse(
+          first_year %in% 1974:1984 & last_year>=1991, "From 1974-1984 until after 1990", ifelse(
+            first_year %in% 1997:1999, "From 1997-1999 until later", ifelse(
+              first_year %in% 1985:1996, "From 1985-1996 until later", ifelse(
+                first_year>1999, "From 1999 until later", "Remainder"))))))
+    )
+p_cons <- "From 1962-1973 until later"
+p1_plot <- mpdata_plot %>%
+  filter(period == p_cons) %>%
+  make_ggplot(p_cons)
+p1_plot
+
+p_cons <- "From 1974-1984 until 1990"
+p2_plot <- mpdata_plot %>%
+  filter(period == p_cons) %>%
+  make_ggplot(p_cons)
+p2_plot
+
+p_cons <- "From 1974-1984 until after 1990"
+p3_plot <- mpdata_plot %>%
+  filter(period == p_cons) %>%
+  make_ggplot(p_cons)
+p3_plot
+
+p_cons <- "From 1985-1996 until later"
+p4_plot <- mpdata_plot %>%
+  filter(period == p_cons) %>%
+  make_ggplot(p_cons)
+p4_plot
+
+p_cons <- "From 1997-1999 until later"
+p5_plot <- mpdata_plot %>%
+  filter(period == p_cons) %>%
+  make_ggplot(p_cons)
+p5_plot
+
+p_cons <- "From 1999 until later"
+p6_plot <- mpdata_plot %>%
+  filter(period == p_cons) %>%
+  make_ggplot(p_cons) 
+p6_plot
+
+p1_6_plot <- ggpubr::ggarrange(
+  p1_plot, p2_plot, p3_plot,
+  p4_plot, p5_plot, p6_plot,
+  ncol = 3, nrow = 2
+)
+
+ggsave(plot = p1_6_plot, 
+       filename = here(paste0(
+         "output/heatmaps/marg_effects_", variable_of_interest, ".pdf")), 
+       width = 8, height = 6)
