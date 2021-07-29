@@ -10,13 +10,27 @@ suppressPackageStartupMessages(library(margins))
 suppressPackageStartupMessages(library(icaeDesign))
 source(here("code/regressions_funs.R"))
 
+redo_computation <- TRUE
 variable_of_interest <- "eci"#  "eci" # "GDP_pc_PPP_log" 
-analysis_result_file <- here(
-  paste0("output/opec/estimations_", variable_of_interest, ".csv"))
-analysis_result_file_mpdata <- here(
-  paste0("output/opec/mpdata_", variable_of_interest, ".csv"))
+vary_only_start <- TRUE # varies only start years and runs always until 2016
+if (vary_only_start){
+  analysis_result_file <- here(
+    paste0("output/opec/estimations_", variable_of_interest, "_red.csv"))
+  analysis_result_file_mpdata <- here(
+    paste0("output/opec/mpdata_", variable_of_interest, "_red.csv"))
+  pdf_file_name <- here(paste0(
+    "output/opec/opec_shit_red.pdf"))
+  txt_file <- here(paste0("output/opec/period_info_red.txt"))
+} else {
+  analysis_result_file <- here(
+    paste0("output/opec/estimations_", variable_of_interest, ".csv"))
+  analysis_result_file_mpdata <- here(
+    paste0("output/opec/mpdata_", variable_of_interest, ".csv"))
+  pdf_file_name <- here(paste0(
+    "output/opec/opec_shit.pdf"))
+  txt_file <- here(paste0("output/opec/period_info.txt"))
+}
 
-redo_computation <- FALSE
 if (redo_computation){
   # 1.1. Data setup------------------------------
   countries_considered <- c(
@@ -141,7 +155,12 @@ if (redo_computation){
   full_dat_list <- list()
   
   for (mi in min_range){
-    for (ma in ((mi+4):2016)) {
+    if (vary_only_start){
+      max_range <- 2016
+    } else{
+      max_range <- seq(mi+4, 2016)
+    }
+    for (ma in max_range) {
       print(paste(mi, "-", ma))
       
       reg_res <- tryCatch(expr = {
@@ -237,73 +256,138 @@ effect_slope <- opec_plot_data %>%
   ) %>%
   select(all_of(c("period", "slope", "group")))
 
-mpdata_plot <- left_join(opec_plot_data, effect_slope, by = c("period", "group")) %>%
-  mutate(
-    period2 = ifelse(
-      first_year %in% 1962:1973, "From 1962-1973 until later", ifelse(
-        first_year %in% 1974:1984 & last_year<1991, "From 1974-1984 until 1990", ifelse(
-          first_year %in% 1974:1984 & last_year>=1991, "From 1974-1984 until after 1990", ifelse(
-            first_year %in% 1997:1999, "From 1997-1999 until later", ifelse(
-              first_year %in% 1985:1996, "From 1985-1996 until later", ifelse(
-                first_year>1999, "From 1999 until later", "Remainder"))))))
+if (vary_only_start){
+  mpdata_plot <- left_join(opec_plot_data, effect_slope, by = c("period", "group")) %>%
+    mutate(
+      period2 = ifelse(
+        first_year %in% 1962:1973, "Start 1962-1973", ifelse(
+          first_year %in% 1974:1984, "Start 1974-1984", ifelse(
+                first_year %in% 1985:1996, "Start 1985-1996", ifelse(
+                  first_year>1996, "Start 1997 and later", "Remainder"))))
+    )
+  # Make actual plots
+  p_cons <- "Start 1962-1973"
+  p1_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group) +
+    ggrepel::geom_text_repel(
+      data = filter(mpdata_plot, xvals==6.0, period2 == p_cons), 
+      mapping = aes(color=slope, label=first_year)) +
+    scale_x_continuous(expand = expansion(add = c(2, 0)))
+  p1_plot
+  
+  p_cons <- "Start 1974-1984"
+  p2_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group) +
+    ggrepel::geom_text_repel(
+      data = filter(mpdata_plot, xvals==6.0, period2 == p_cons), 
+      mapping = aes(color=slope, label=first_year)) +
+    scale_x_continuous(expand = expansion(add = c(2, 0)))
+  p2_plot
+  
+  p_cons <- "Start 1985-1996"
+  p3_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group) +
+    ggrepel::geom_text_repel(
+      data = filter(mpdata_plot, xvals==6.0, period2 == p_cons), 
+      mapping = aes(color=slope, label=first_year)) +
+    scale_x_continuous(expand = expansion(add = c(2, 0)))
+  p3_plot
+  
+  p_cons <- "Start 1997 and later"
+  p4_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group) +
+    ggrepel::geom_text_repel(
+      data = filter(mpdata_plot, xvals==6.0, period2 == p_cons), 
+      mapping = aes(color=slope, label=first_year)) +
+    scale_x_continuous(expand = expansion(add = c(2, 0)))
+  p4_plot
+  
+  p1_6_plot <- ggpubr::ggarrange(
+    p1_plot, p2_plot, p3_plot,
+    p4_plot, 
+    ncol = 2, nrow = 2
   )
+  
+  ggsave(plot = p1_6_plot, 
+         filename = pdf_file_name, 
+         width = 10, height = 9)
+  
+} else {
+  mpdata_plot <- left_join(opec_plot_data, effect_slope, by = c("period", "group")) %>%
+    mutate(
+      period2 = ifelse(
+        first_year %in% 1962:1973, "From 1962-1973 until later", ifelse(
+          first_year %in% 1974:1984 & last_year<1991, "From 1974-1984 until 1990", ifelse(
+            first_year %in% 1974:1984 & last_year>=1991, "From 1974-1984 until after 1990", ifelse(
+              first_year %in% 1997:1999, "From 1997-1999 until later", ifelse(
+                first_year %in% 1985:1996, "From 1985-1996 until later", ifelse(
+                  first_year>1999, "From 1999 until later", "Remainder"))))))
+    )
+  
+  # Make actual plots
+  p_cons <- "From 1962-1973 until later"
+  p1_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group)
+  p1_plot
+  
+  p_cons <- "From 1974-1984 until 1990"
+  p2_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group)
+  p2_plot
+  
+  p_cons <- "From 1974-1984 until after 1990"
+  p3_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group)
+  p3_plot
+  
+  p_cons <- "From 1985-1996 until later"
+  p4_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group)
+  p4_plot
+  
+  p_cons <- "From 1997-1999 until later"
+  p5_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group)
+  p5_plot
+  
+  p_cons <- "From 1999 until later"
+  p6_plot <- mpdata_plot %>%
+    filter(period2 == p_cons) %>%
+    make_ggplot(p_cons) +
+    facet_wrap(~group)
+  p6_plot
+  
+  p1_6_plot <- ggpubr::ggarrange(
+    p1_plot, p2_plot, p3_plot,
+    p4_plot, p5_plot, p6_plot,
+    ncol = 3, nrow = 2
+  )
+  
+  ggsave(plot = p1_6_plot, 
+         filename = pdf_file_name, 
+         width = 10, height = 6)
+}
 
-# Make actual plots
-p_cons <- "From 1962-1973 until later"
-p1_plot <- mpdata_plot %>%
-  filter(period2 == p_cons) %>%
-  make_ggplot(p_cons) +
-  facet_wrap(~group)
-p1_plot
-
-p_cons <- "From 1974-1984 until 1990"
-p2_plot <- mpdata_plot %>%
-  filter(period2 == p_cons) %>%
-  make_ggplot(p_cons) +
-  facet_wrap(~group)
-p2_plot
-
-p_cons <- "From 1974-1984 until after 1990"
-p3_plot <- mpdata_plot %>%
-  filter(period2 == p_cons) %>%
-  make_ggplot(p_cons) +
-  facet_wrap(~group)
-p3_plot
-
-p_cons <- "From 1985-1996 until later"
-p4_plot <- mpdata_plot %>%
-  filter(period2 == p_cons) %>%
-  make_ggplot(p_cons) +
-  facet_wrap(~group)
-p4_plot
-
-p_cons <- "From 1997-1999 until later"
-p5_plot <- mpdata_plot %>%
-  filter(period2 == p_cons) %>%
-  make_ggplot(p_cons) +
-  facet_wrap(~group)
-p5_plot
-
-p_cons <- "From 1999 until later"
-p6_plot <- mpdata_plot %>%
-  filter(period2 == p_cons) %>%
-  make_ggplot(p_cons) +
-  facet_wrap(~group)
-p6_plot
-
-p1_6_plot <- ggpubr::ggarrange(
-  p1_plot, p2_plot, p3_plot,
-  p4_plot, p5_plot, p6_plot,
-  ncol = 3, nrow = 2
-)
-
-ggsave(plot = p1_6_plot, 
-       filename = here(paste0(
-         "output/opec/opec_shit.pdf")), 
-       width = 10, height = 6)
 
 #Infos zu positiven und negatien Slopes----------
-txt_file <- here(paste0("output/opec/period_info.txt"))
 
 positiv_opec <- effect_slope %>%
   filter(group=="OPEC", slope=="positive") %>%
