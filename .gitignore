@@ -6,6 +6,7 @@ Rplots.pdf
 *~
 code/ECI-growth-regression-Rproject.R
 code/comparison.R
+core/test_
 data/ECI-growth-data_final orig.csv
 data/intermediate_data.RData
 data/intermediate_data_old.Rdata
