@@ -132,14 +132,14 @@ if (redo_computation){
     ungroup() 
   
   
-  min_range <- 1962:2012
+  min_range <- 1962:2010
   # min_range <- 1980:1981
   # min_range <- 2010:2012
   full_dat_list <- list()
   
   for (mi in min_range){
     if (vary_only_start){
-      max_range <- 2016
+      max_range <- 2014
     } else{
       max_range <- seq(mi+4, 2016)
     }
@@ -249,7 +249,7 @@ robustness_gdp <- plot_data %>%
   ggplot(., aes(x=x, y=y, color=col_val, group=period_col_val)) +
   geom_line(alpha=0.5, key_glyph=draw_key_rect)  + 
   labs(
-    title = "Initial level of ECI",
+    title = "GDP in first year",
     x = "GDP per capita in first year (log)",
     y = "Predicted average growth in GDP pc"
   ) +
@@ -267,7 +267,7 @@ robustness_eci <- plot_data %>%
   ggplot(., aes(x=x, y=y, color=col_val, group=period_col_val)) +
   geom_line(alpha=0.5, key_glyph=draw_key_rect)  + 
   labs(
-    title = "Initial level of GDP",
+    title = "ECI in first year",
     x = "ECI in first year",
     y = "Predicted average growth in GDP pc"
   ) +
@@ -286,7 +286,7 @@ robustness_full <- ggpubr::ggarrange(
 
 robustness_full <- ggpubr::annotate_figure(
   robustness_full, 
-  top = ggpubr::text_grob("Robustness for varying starting years", size = 14))
+  top = ggpubr::text_grob("Robustness of marginal effects for varying starting years", size = 14))
 
 ggsave(plot = robustness_full, 
        filename = here("output/fig_4_robustness_new_v1.pdf"), 
@@ -303,7 +303,7 @@ robustness_full2 <- ggpubr::ggarrange(
 
 robustness_full2 <- ggpubr::annotate_figure(
   robustness_full2, 
-  top = ggpubr::text_grob("Robustness for varying starting years", size = 14))
+  top = ggpubr::text_grob("Robustness of marginal effects for varying starting years", size = 14))
 
 ggsave(plot = robustness_full2, 
        filename = here("output/fig_4_robustness_new_v2.pdf"), 
