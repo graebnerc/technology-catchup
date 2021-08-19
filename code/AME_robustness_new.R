@@ -249,7 +249,7 @@ robustness_gdp <- plot_data %>%
   ggplot(., aes(x=x, y=y, color=col_val, group=period_col_val)) +
   geom_line(alpha=0.5, key_glyph=draw_key_rect)  + 
   labs(
-    title = "GDP in first year",
+    title = "Marginal effect of GDP in 1st year",
     x = "GDP per capita in first year (log)",
     y = "Predicted average growth in GDP pc"
   ) +
@@ -267,7 +267,7 @@ robustness_eci <- plot_data %>%
   ggplot(., aes(x=x, y=y, color=col_val, group=period_col_val)) +
   geom_line(alpha=0.5, key_glyph=draw_key_rect)  + 
   labs(
-    title = "ECI in first year",
+    title = "Marginal effect of ECI",
     x = "ECI in first year",
     y = "Predicted average growth in GDP pc"
   ) +
