@@ -676,8 +676,6 @@ stargazer(reg_panel_5year_7, reg_panel_5year_7_cfe,
 
 #Descriptive statistics
 stargazer(data_reg_predict_1985_2014) #cross-section
-stargazer(data_reg_predict_1990_2010) #cross-section
-stargazer(regression_data_5_year) #panel, 5-year averages
 
 #Table with property rights
 stargazer(reg_predict_7_politicalquality, reg_predict_7_politicalquality_oilexports, reg_predict_7_propertyrights, reg_predict_7_propertyrights_oilexports, t=list(unlist(tvals.reg_predict_7_politicalquality), unlist(tvals.reg_predict_7_politicalquality_oilexports), unlist(tvals.reg_predict_7_propertyrights), unlist(tvals.reg_predict_7_propertyrights_oilexports)), se=list(unlist(ses.reg_predict_7_politicalquality), unlist(ses.reg_predict_7_politicalquality_oilexports), unlist(ses.reg_predict_7_propertyrights), unlist(ses.reg_predict_7_propertyrights_oilexports)), p=list(unlist(pvals.reg_predict_7_politicalquality), unlist(pvals.reg_predict_7_politicalquality_oilexports), unlist(pvals.reg_predict_7_propertyrights), unlist(pvals.reg_predict_7_propertyrights_oilexports)))
@@ -695,8 +693,8 @@ dwtest(reg_predict_7)
 
 #correlation matrix
 
-corr_matrix_data <- select(data_reg_predict_1990_2010, eci, GDP_pc_PPP_log, avg_GDP_pc_PPP_growth, kof_econ, popgrowth, humancapital, legalquality, politicalquality, economicquality, oilexports)
-colnames(corr_matrix_data) <- c('ECI', 'GDPpc', 'growth', 'global', 'pop', 'hc', 'linst', 'pinst', 'einst', 'oil')
+corr_matrix_data <- select(data_reg_predict_1990_2010, eci, GDP_pc_PPP_log, avg_GDP_pc_PPP_growth, kof_econ, popgrowth, humancapital, legalquality, politicalquality, economicquality, oilexports, invest)
+colnames(corr_matrix_data) <- c('ECI', 'GDPpc', 'growth', 'global', 'pop', 'hc', 'linst', 'pinst', 'einst', 'oil', 'invest')
 
 round(cor(corr_matrix_data, method="pearson", use="complete.obs"),
       digits = 2)

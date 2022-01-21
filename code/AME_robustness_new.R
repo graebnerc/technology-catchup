@@ -13,6 +13,8 @@ source(here("code/regressions_funs.R"))
 
 redo_computation <- TRUE
 vary_only_start <- TRUE # varies only start years and runs always until 2016
+eci_color_mapping <- c("-2"="#1B9E77", "0"="#D95F02", "2"="#7570B3")
+gdp_color_mapping <- c("7"="#1B9E77", "8.5"="#D95F02", "10"="#7570B3")
 
 if (redo_computation){
   # 1.1. Data setup------------------------------
@@ -161,8 +163,6 @@ if (redo_computation){
         reg_man <- lm(formula = regr_form, data=current_data, na.action=na.exclude)
         
         # Make the plot with GDP on the x-axis:
-        gdp_color_mapping <- c("7"="#1B9E77", "8.5"="#D95F02", "10"="#7570B3")
-        
         eci_xaxis_plot_vals <- plot_model(
           reg_man, type = "pred", 
           terms = c("eci", "GDP_pc_PPP_log [7, 8.5, 10]"), 
@@ -188,7 +188,6 @@ if (redo_computation){
           select(-all_of(c("colour")))
         
         # Make the plot with ECI on the x-axis:
-        eci_color_mapping <- c("-2"="#1B9E77", "0"="#D95F02", "2"="#7570B3")
         
         gdp_xaxis_plot_vals <- plot_model(
           reg_man, type = "pred", 
@@ -268,7 +267,7 @@ robustness_eci <- plot_data %>%
   geom_line(alpha=0.5, key_glyph=draw_key_rect)  + 
   labs(
     title = "Marginal effect of ECI",
-    x = "ECI in first year",
+    x = "Economic Complexity Index",
     y = "Predicted average growth in GDP pc"
   ) +
   scale_color_manual(

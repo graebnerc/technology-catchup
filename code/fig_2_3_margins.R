@@ -22,11 +22,11 @@ reg_predict_7 <- lm(
 fig_2 <- plot_model(
   reg_predict_7, type = "pred", 
   terms = c("GDP pc (PPP, log)", "ECI [-2, 0, 2]"), ci.lvl=0.9) + 
-  font_size(title = 12) +     
+  font_size(title = 12) +    
   labs(
-    y="Predicted average growth in GDP pc (1985-2014)",
-    x="GDP per capita in 1985 (in logs)",
-    title="Initial level of Economic Complexity"
+    title = "Marginal effect of GDP in 1st year",
+    x = "GDP per capita in 1985 (in logs)",
+    y = "Predicted average growth in GDP pc (1985-2014)"
   ) +
   theme_bw() +
   scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
@@ -34,6 +34,7 @@ fig_2 <- plot_model(
   scale_y_continuous(expand = expansion()) +
   theme(
     panel.border = element_blank(),
+    plot.title = element_text(hjust = 0.5),
     axis.line = element_line(),
     axis.title.x = element_text(size = 8), 
     axis.text.x = element_text(size = 8), 
@@ -51,9 +52,9 @@ fig_3 <- plot_model(
   ci.lvl=0.9) +
   font_size(title = 12) +     
   labs(
-    y="Predicted average growth in GDP pc (1985-2014)",
-    x="Economic Complexity Index in 1985",
-    title="Initial level of GDP"
+    title = "Marginal effect of ECI",
+    x = "Economic Complexity Index",
+    y = "Predicted average growth in GDP pc (1985-2014)"
   ) +
   theme_bw() +
   scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
@@ -61,6 +62,7 @@ fig_3 <- plot_model(
   scale_y_continuous(expand = expansion()) +
   theme(
     panel.border = element_blank(),
+    plot.title = element_text(hjust = 0.5),
     axis.line = element_line(),
     axis.title.x = element_text(size = 8), 
     axis.text.x = element_text(size = 8), 
