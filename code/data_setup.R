@@ -19,7 +19,7 @@ vars_used_avg <- c(
   "ccode", 
   "eci", "Penn_GDP_PPP_log","GDP_pc_growth", "KOF_econ", "pop_growth", "hc",
   "primary_exports_1_share_country", "oil_exports_share_country", 
-  "coal_and_metal_exports_share_country")
+  "coal_and_metal_exports_share_country", "domesticcredit")
 
 total_vars <- c(
   "Year", "Penn_GDP_PPP", "population", "GNIpc", "PropertyRights", "period",
@@ -93,7 +93,7 @@ data_reg_1985_2014_AVG <- data_reg_1985_2014 %>%
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
       "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
-      "inv_share_Mean")))
+      "inv_share_Mean", "domesticcredit_Mean")))
 
 data_reg_predict_1985_2014 <- data_reg_1985 %>%
   select(all_of(
@@ -110,7 +110,8 @@ data_reg_predict_1985_2014 <- data_reg_1985 %>%
     inv_share=inv_share_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
-    coalandmetalexports=coal_and_metal_exports_share_country_Mean
+    coalandmetalexports=coal_and_metal_exports_share_country_Mean,
+    domesticcredit=domesticcredit_Mean
   )
 
 # Create 1990 - 2010 data------------------------------------------------------
@@ -136,7 +137,7 @@ data_reg_1990_2010_AVG <- data_reg_1990_2010 %>%
       "coal_and_metal_exports_share_country_Mean",
       "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
       "political_rel_Mean", "economic_rel_Mean", "legal_rel_Mean",
-      "PropertyRights_Mean")))
+      "PropertyRights_Mean", "domesticcredit_Mean")))
 
 data_reg_predict_1990_2010 <- data_reg_1990 %>%
   select(all_of(
@@ -159,7 +160,8 @@ data_reg_predict_1990_2010 <- data_reg_1990 %>%
     legalquality=legal_rel_Mean,
     politicalquality=political_rel_Mean,
     economicquality=economic_rel_Mean,
-    propertyrights=PropertyRights_Mean
+    propertyrights=PropertyRights_Mean,
+    domesticcredit=domesticcredit_Mean
   ) %>%
   filter(
     !is.na(economicquality), !is.na(legalquality), !is.na(politicalquality)
@@ -186,7 +188,8 @@ data_reg_1970_1984_AVG <- data_reg_1970_1984 %>%
       "primary_exports_1_share_country_Mean",
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
-      "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean")))
+      "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
+      "domesticcredit_Mean")))
 
 data_reg_predict_1970_1984 <- data_reg_1970 %>%
   select(all_of(
@@ -204,7 +207,8 @@ data_reg_predict_1970_1984 <- data_reg_1970 %>%
     # inv_share=inv_share_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
-    coalandmetalexports=coal_and_metal_exports_share_country_Mean
+    coalandmetalexports=coal_and_metal_exports_share_country_Mean,
+    domesticcredit=domesticcredit_Mean
   )
 
 # Create data 1985 - 2014 for developing countries-----------------------------
@@ -222,11 +226,13 @@ regression_data_5_year <- data_reg_1985_2014 %>%
     c("ccode", "period", "eci", "Penn_GDP_PPP_log", "GDP_pc_growth", 
       "KOF_econ", "AdvancedCountry", "HighIncome", "LowIncome", 
       "LowerMiddleIncome", "HigherMiddleIncome", "pop_growth", "hc", 
-      "OPECdummy", "inv_share")))
-colnames(regression_data_5_year) <- c(
-  'ccode', 'period', 'eci', 'Penn_GDP_PPP_log', 'GDP_pc_growth', 'kof_econ', 
-  'AdvancedCountry', 'HighIncome', 'LowIncome', 'LowerMiddleIncome', 
-  'HigherMiddleIncome', 'popgrowth', 'humancapital', 'OPECdummy', 'inv_share')
+      "OPECdummy", "inv_share"))) %>%
+  rename(
+    GDP_pc_PPP_log=Penn_GDP_PPP_log, 
+    kof_econ=KOF_econ,
+    popgrowth=pop_growth,
+    humancapital=hc
+  )
 
 # Save intermediate data-------------------------------------------------------
 save(
@@ -236,5 +242,6 @@ save(
   regression_data_1_year,
   regression_data_5_year,
   data_reg_predict_1985_2014_developing, 
+  data_reg_1985_2014,
   file = here("data/intermediate_data.RData")
   )
