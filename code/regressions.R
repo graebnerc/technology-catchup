@@ -73,94 +73,6 @@ reg_predict_7 <- make_reg(
   ), 
   reg_data=data_reg_predict_1985_2014)
 
-# Regressions for robustness checks--------------------------------------------
-
-reg_predict_7 <- make_reg(
-  as.formula(
-   paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-          "eci*GDP_pc_PPP_log + popgrowth + humancapital + inv_share")
-   ), 
-  reg_data=data_reg_predict_1985_2014)
-
-reg_predict_7_domesticcredit <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-           "eci*GDP_pc_PPP_log + popgrowth + humancapital + domesticcredit")
-  ), 
-  reg_data=data_reg_predict_1985_2014)
-
-reg_predict_7_oilexports <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
-    "eci*GDP_pc_PPP_log + oilexports + popgrowth + humancapital")
-    ), 
-  reg_data=data_reg_predict_1985_2014)
-
-reg_predict_7_coalandmetalexports <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
-    "eci*GDP_pc_PPP_log + coalandmetalexports + popgrowth + humancapital")
-    ), 
-  reg_data=data_reg_predict_1985_2014)
-
-reg_predict_7_legalquality <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
-    "eci*GDP_pc_PPP_log + legalquality + popgrowth + humancapital")
-    ), 
-  reg_data=data_reg_predict_1990_2010)
-
-reg_predict_7_politicalquality <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
-    "eci*GDP_pc_PPP_log + politicalquality + popgrowth + humancapital")
-    ), 
-  reg_data=data_reg_predict_1990_2010)
-
-reg_predict_7_economicquality <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ",
-    "eci*GDP_pc_PPP_log + economicquality + popgrowth + humancapital")
-    ), 
-  reg_data=data_reg_predict_1990_2010)
-
-reg_predict_7_politicalquality_oilexports <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-           "eci*GDP_pc_PPP_log + politicalquality + popgrowth + humancapital +", 
-           " oilexports")
-    ), 
-  reg_data=data_reg_predict_1990_2010)
-
-reg_predict_7_propertyrights <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-           "eci*GDP_pc_PPP_log + propertyrights + popgrowth + humancapital")
-    ), 
-  reg_data=data_reg_predict_1990_2010)
-
-reg_predict_7_propertyrights_oilexports <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-           "eci*GDP_pc_PPP_log + propertyrights + popgrowth + humancapital + ", 
-           "oilexports")
-    ), 
-  reg_data=data_reg_predict_1990_2010)
-
-reg_predict_7_1970_1984 <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci*GDP_pc_PPP_log + ", 
-           "kof_econ + popgrowth + humancapital")
-  ), 
-  reg_data=data_reg_predict_1970_1984)
-
-reg_predict_7_developing <- make_reg(
-  as.formula(
-    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + kof_econ + ", 
-           "eci*GDP_pc_PPP_log + popgrowth + humancapital")
-    ), 
-    reg_data=data_reg_predict_1985_2014_developing)
-
 reg_panel_5year_7 <- make_panel_reg(
   as.formula(paste0(
     "GDP_pc_growth ~ lag(GDP_pc_PPP_log, 1) + lag(eci,1) + kof_econ + ", 
@@ -177,8 +89,6 @@ reg_panel_5year_7_cfe <- make_panel_reg(
   panel_effect="twoways")
 
 # Table 2: Main econometric results (1985-2014, 108 countries)-----------------
-order_vec <- c("GDP_pc_PPP_log", "eci", "kof_econ", "popgrowth", "humancapital", 
-               "inv_share", "GDP_pc_PPP_log:eci", "(Intercept)")
 stargazer(
   reg_predict_1[["reg"]], 
   reg_predict_2[["reg"]], 
@@ -239,30 +149,134 @@ stargazer(
   omit = "lag*"
   )
 
-# Table 3: Robustness checks
+# Regressions for robustness checks--------------------------------------------
+
+# Baseline:
+reg_predict_7 <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log")
+  ), 
+  reg_data=data_reg_predict_1985_2014)
+
+# Developing countries:
+reg_predict_7_developing <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log")
+  ), 
+  reg_data=data_reg_predict_1985_2014_developing)
+
+# Different time frame:
+reg_predict_7_1970_1984 <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log")
+  ), 
+  reg_data=data_reg_predict_1970_1984)
+
+# Resource dependence - oil:
+reg_predict_7_oilexports <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log",
+           " + oilexports")
+  ), 
+  reg_data=data_reg_predict_1985_2014)
+
+# Resource dependence - coal and metal:
+reg_predict_7_coalandmetalexports <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           "+ coal")
+  ), 
+  reg_data=rename(data_reg_predict_1985_2014, coal=coalandmetalexports))
+
+# Institutions:
+reg_predict_7_economicquality <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           " + economicquality")
+  ), 
+  reg_data=data_reg_predict_1990_2010)
+
+reg_predict_7_politicalquality <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           " + politicalquality")
+  ), 
+  reg_data=data_reg_predict_1990_2010)
+
+reg_predict_7_legalquality <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           " + legalquality")
+  ), 
+  reg_data=data_reg_predict_1990_2010)
+
+# Institutions and oil:
+reg_predict_7_politicalquality_oilexports <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           "+ politicalquality + oilexports")
+  ), 
+  reg_data=data_reg_predict_1990_2010)
+
+# Property rights (for the appendix):
+reg_predict_7_propertyrights <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           "+ propertyrights")
+  ), 
+  reg_data=data_reg_predict_1990_2010)
+
+reg_predict_7_propertyrights_oilexports <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           " + propertyrights + oilexports")
+  ), 
+  reg_data=data_reg_predict_1990_2010)
+
+# Domestic credit:
+reg_predict_7_domesticcredit <- make_reg(
+  as.formula(
+    paste0("avg_GDP_pc_PPP_growth ~ GDP_pc_PPP_log + eci + kof_econ + ", 
+           "popgrowth + humancapital + inv_share + eci*GDP_pc_PPP_log", 
+           " + domesticcredit")
+  ), 
+  reg_data=data_reg_predict_1985_2014)
+
+# Table 3: Robustness checks---------------------------------------------------
 stargazer(
-  reg_predict_7_domesticcredit[["reg"]], 
-  reg_predict_7_developing[["reg"]], 
-  reg_predict_7_1970_1984[["reg"]], 
-  reg_predict_7_oilexports[["reg"]], 
+  reg_predict_7[["reg"]],
+  reg_predict_7_developing[["reg"]],
+  reg_predict_7_1970_1984[["reg"]],
+  reg_predict_7_oilexports[["reg"]],
   reg_predict_7_coalandmetalexports[["reg"]], 
-  reg_predict_7_economicquality[["reg"]], 
-  reg_predict_7_politicalquality[["reg"]], 
-  reg_predict_7_legalquality[["reg"]], 
-  reg_predict_7_politicalquality_oilexports[["reg"]], 
+  reg_predict_7_economicquality[["reg"]],
+  reg_predict_7_politicalquality[["reg"]],
+  reg_predict_7_legalquality[["reg"]],
+  reg_predict_7_politicalquality_oilexports[["reg"]],
   t=list(
-    unlist(reg_predict_7_domesticcredit[["tvals"]]), 
-    unlist(reg_predict_7_developing[["tvals"]]), 
-    unlist(reg_predict_7_1970_1984[["tvals"]]), 
-    unlist(reg_predict_7_oilexports[["tvals"]]), 
+    unlist(reg_predict_7[["tvals"]]),
+    unlist(reg_predict_7_developing[["tvals"]]),
+    unlist(reg_predict_7_1970_1984[["tvals"]]),
+    unlist(reg_predict_7_oilexports[["tvals"]]),
     unlist(reg_predict_7_coalandmetalexports[["tvals"]]),
-    unlist(reg_predict_7_economicquality[["tvals"]]), 
-    unlist(reg_predict_7_politicalquality[["tvals"]]), 
-    unlist(reg_predict_7_legalquality[["tvals"]]), 
+    unlist(reg_predict_7_economicquality[["tvals"]]),
+    unlist(reg_predict_7_politicalquality[["tvals"]]),
+    unlist(reg_predict_7_legalquality[["tvals"]]),
     unlist(reg_predict_7_politicalquality_oilexports[["tvals"]])
-    ), 
+    ),
   se=list(
-    unlist(reg_predict_7_domesticcredit[["ses"]]),
+    unlist(reg_predict_7[["ses"]]),
     unlist(reg_predict_7_developing[["ses"]]),
     unlist(reg_predict_7_1970_1984[["ses"]]),
     unlist(reg_predict_7_oilexports[["ses"]]),
@@ -270,28 +284,30 @@ stargazer(
     unlist(reg_predict_7_economicquality[["ses"]]),
     unlist(reg_predict_7_politicalquality[["ses"]]),
     unlist(reg_predict_7_legalquality[["ses"]]),
-    unlist(reg_predict_7_politicalquality_oilexports[["ses"]]) 
-    ), 
+    unlist(reg_predict_7_politicalquality_oilexports[["ses"]])
+    ),
   p=list(
-    unlist(reg_predict_7_domesticcredit[["pvals"]]),
+    unlist(reg_predict_7[["pvals"]]),
     unlist(reg_predict_7_developing[["pvals"]]),
     unlist(reg_predict_7_1970_1984[["pvals"]]),
-    unlist(reg_predict_7_oilexports[["pvals"]]), 
-    unlist(reg_predict_7_coalandmetalexports[["pvals"]]), 
-    unlist(reg_predict_7_economicquality[["pvals"]]), 
-    unlist(reg_predict_7_politicalquality[["pvals"]]), 
-    unlist(reg_predict_7_legalquality[["pvals"]]), 
+    unlist(reg_predict_7_oilexports[["pvals"]]),
+    unlist(reg_predict_7_coalandmetalexports[["pvals"]]),
+    unlist(reg_predict_7_economicquality[["pvals"]]),
+    unlist(reg_predict_7_politicalquality[["pvals"]]),
+    unlist(reg_predict_7_legalquality[["pvals"]]),
     unlist(reg_predict_7_politicalquality_oilexports[["pvals"]])
-    ), 
+    ),
   out = here("output/tex/Tab3_robustness_raw.tex"), float = FALSE, 
-  column.labels = c("findev", "devel", "1970-1984", "oil", "coal", 
-                    "einst", "pinst", "linst", "pinst + oil"), 
+  column.labels = c(
+    "Baseline", "Developing c.", "1970-1984", "Oil", "Coal", 
+    "EconInst", "PolInst", "LegalInst", "PolInst + oil"), 
   dep.var.caption = "", digits = 3, dep.var.labels.include = FALSE, 
-  model.names = FALSE, omit.stat =  c("ser", "f"),
+  model.names = FALSE, omit.stat =  c("ser", "f", "adj.rsq"),
   covariate.labels = c(
-    "log(GDPpc)", "global", "ECI", "oil", "coal",
-    "einst", "pinst", "linst",
-    "pop", "hc", "findev","log(GDPpc) $\\cdot$ ECI")
+    "GDPpc", "ECI", "Globalization", "Pop. growth", "Human capital",
+    "Investment", "Oil exports", "Coal \\& metal exp.", "Econ. inst.",
+    "Political inst.", "Legal inst.", "GDPpc \\cdot ECI", "Intercept"),
+  omit = "lag*"
   )
 
 
