@@ -279,17 +279,19 @@ robustness_eci <- plot_data %>%
 robustness_eci
 
 # A single plot----------------------------------
-robustness_full <- ggpubr::ggarrange(
-  robustness_gdp, robustness_eci, ncol = 2, labels = c("A)", "B)")
-)
-
-robustness_full <- ggpubr::annotate_figure(
-  robustness_full, 
-  top = ggpubr::text_grob("Robustness of marginal effects for varying starting years", size = 14))
-
-ggsave(plot = robustness_full, 
-       filename = here("output/fig_4_robustness_new_v1.pdf"), 
-       width = 9, height = 4)
+# Results are not visible in this version
+# robustness_full <- ggpubr::ggarrange(
+#   robustness_gdp, robustness_eci, ncol = 2, labels = c("A)", "B)")
+# )
+# 
+# robustness_full <- ggpubr::annotate_figure(
+#   robustness_full, 
+#   top = ggpubr::text_grob(
+#     "Robustness of marginal effects for varying starting years", size = 14))
+# 
+# ggsave(plot = robustness_full, 
+#        filename = here("output/fig_3_robustness_new_v1.pdf"), 
+#        width = 9, height = 4)
 
 # Separate plots----------------------------------
 robustness_full2 <- ggpubr::ggarrange(
@@ -302,9 +304,10 @@ robustness_full2 <- ggpubr::ggarrange(
 
 robustness_full2 <- ggpubr::annotate_figure(
   robustness_full2, 
-  top = ggpubr::text_grob("Robustness of marginal effects for varying starting years", size = 14))
+  top = ggpubr::text_grob(
+    "Robustness of marginal effects for varying starting years", size = 14))
 
 ggsave(plot = robustness_full2, 
-       filename = here("output/fig_4_robustness_new_v2.pdf"), 
+       filename = here("output/fig_3_robustness.pdf"), 
        width = 9, height = 4)
 
