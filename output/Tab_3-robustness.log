@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.12.0 (TeX Live 2020)  (format=lualatex 2020.9.1)  28 MAR 2022 08:36
+This is LuaHBTeX, Version 1.12.0 (TeX Live 2020)  (format=lualatex 2020.9.1)  28 MAR 2022 14:56
  restricted system commands enabled.
 **output/Tab_3-robustness.tex
 (./output/Tab_3-robustness.tex
@@ -162,8 +162,8 @@ Package: filehook 2020/02/03 v0.7 Hooks for input files
 \c@currfiledepth=\count174
 )
 \sa@out=\write3
-Package standalone Info: STA file not found! on input line 554.
 
+(./output/Tab_3-robustness.sta)
 (/usr/local/texlive/2020/texmf-dist/tex/latex/gincltex/gincltex.sty
 (/usr/local/texlive/2020/texmf-dist/tex/latex/svn-prov/svn-prov.sty
 Package: svn-prov 2010/04/24 v3.1862 Package Date/Version from SVN Keywords
@@ -632,9 +632,9 @@ File: l3backend-pdfmode.def 2020-03-12 L3 backend support: PDF mode
 \l__kernel_color_stack_int=\count194
 \l__pdf_internal_box=\box56
 )
-No file Tab_3-robustness.aux.
-
+(./output/Tab_3-robustness.aux)
 \openout1 = Tab_3-robustness.aux
+
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 7.
 LaTeX Font Info:    ... okay on input line 7.
 LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 7.
@@ -645,6 +645,7 @@ LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 7.
 LaTeX Font Info:    ... okay on input line 7.
 LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 7.
 LaTeX Font Info:    Trying to load font information for TS1+cmr on input line 7.
+
 
 (/usr/local/texlive/2020/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 2019/12/16 v2.5j Standard LaTeX font definitions
@@ -657,6 +658,7 @@ LaTeX Font Info:    ... okay on input line 7.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 7.
 LaTeX Font Info:    ... okay on input line 7.
 
+(./output/Tab_3-robustness.sta)
 \openout3 = Tab_3-robustness.sta
 
 (/usr/local/texlive/2020/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
@@ -693,23 +695,23 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (./output/Tab_3-robustness.aux))
 
 Here is how much of LuaTeX's memory you used:
- 12259 strings out of 480992
+ 12274 strings out of 480992
  100000,552014 words of node,token memory allocated
- 41509 words of node memory still in use:
-   632 hlist, 2 vlist, 59 rule, 7 disc, 192 math, 2469 glue, 11 kern, 1351 glyph
-, 2242 attribute, 48 glue_spec, 1122 attribute_list, 2 write, 4 pdf_colorstack n
+ 34845 words of node memory still in use:
+   484 hlist, 2 vlist, 38 rule, 24 disc, 206 math, 1772 glue, 18 kern, 1511 glyp
+h, 1674 attribute, 48 glue_spec, 838 attribute_list, 2 write, 4 pdf_colorstack n
 odes
-   avail lists: 2:34,3:6,4:9,5:30,6:1,7:4022,8:4,9:696,11:7
+   avail lists: 2:34,3:6,4:9,5:37,6:1,7:3499,8:4,9:527,11:24
  29194 multiletter control sequences out of 65536+600000
  36 fonts using 4012019 bytes
- 99i,8n,76p,534b,166s stack positions out of 5000i,500n,10000p,200000b,100000s
+ 99i,8n,76p,534b,176s stack positions out of 5000i,500n,10000p,200000b,100000s
 </usr/local/texlive/2020/texmf-dist/fonts/opentype/public/lm/lmroman10-italic.ot
 f></usr/local/texlive/2020/texmf-dist/fonts/opentype/public/lm/lmroman10-regular
 .otf></usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.p
 fb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><
 /usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></u
 sr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on Tab_3-robustness.pdf (1 page, 40367 bytes).
+Output written on Tab_3-robustness.pdf (1 page, 41057 bytes).
 
 PDF statistics: 41 PDF objects out of 1000 (max. 8388607)
  27 compressed objects within 1 object stream

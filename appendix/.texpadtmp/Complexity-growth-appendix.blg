@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2020)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: /Users/graebnerc/icae-server/ICAE-Sonstiges/JP-Paper/Complexity-growth-convergence/code and data/eci-growth/appendix/.texpadtmp/Complexity-growth-appendix.aux
+The style file: ../spbasic.bst
+Database file #1: ../cjebib.bib
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Warning--missing publisher in Bell:1995wj
+You've used 25 entries,
+            3269 wiz_defined-function locations,
+            847 strings with 9537 characters,
+and the built_in function-call counts, 26208 in all, are:
+= -- 2399
+> -- 696
+< -- 13
++ -- 242
+- -- 217
+* -- 2313
+:= -- 3577
+add.period$ -- 24
+call.type$ -- 25
+change.case$ -- 194
+chr.to.int$ -- 25
+cite$ -- 26
+duplicate$ -- 2325
+empty$ -- 2452
+format.name$ -- 292
+if$ -- 5504
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 264
+newline$ -- 85
+num.names$ -- 102
+pop$ -- 553
+preamble$ -- 1
+purify$ -- 172
+quote$ -- 0
+skip$ -- 434
+stack$ -- 0
+substring$ -- 2990
+swap$ -- 584
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 210
+warning$ -- 1
+while$ -- 205
+width$ -- 0
+write$ -- 280
+(There was 1 warning)

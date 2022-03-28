@@ -315,11 +315,11 @@ stargazer(
 
 #  Descriptive statistics
 stargazer(as.data.frame(data_reg_predict_1985_2014), float = F, 
-          out = here("output/A1-Descripitves85-14.tex")) 
+          out = here("appendix/A1-Descripitves85-14.tex")) 
 stargazer(as.data.frame(data_reg_predict_1990_2010), float = F, 
-          out = here("output/A2-Descripitves90-10.tex"))
+          out = here("appendix/A2-Descripitves90-10.tex"))
 stargazer(as.data.frame(regression_data_5_year), float = F, 
-          out = here("output/A3-DesctipitvesPanel.tex")) 
+          out = here("appendix/A3-DesctipitvesPanel.tex")) 
 
 # Regressions with property rights
 stargazer(reg_predict_7_politicalquality[["reg"]], 
@@ -344,7 +344,7 @@ stargazer(reg_predict_7_politicalquality[["reg"]],
             unlist(reg_predict_7_propertyrights[["pvals"]]),
             unlist(reg_predict_7_propertyrights_oilexports[["pvals"]])
             ), 
-          out = here("output/A4-PropertyRights.tex"), float = FALSE, 
+          out = here("appendix/A4-PropertyRights.tex"), float = FALSE, 
           covariate.labels = c("GDPpc (log)",
             "Globalization", "ECI", "Political inst", "Property rights", 
             "Population growth", "Human capital", 
@@ -364,7 +364,7 @@ residual_plot <- tibble(
   theme_sjplot()
 
 ggsave(plot = residual_plot, 
-       filename = here("output/A5-ResidualPlot.pdf"), 
+       filename = here("appendix/A5-ResidualPlot.pdf"), 
        width = 6, height = 4)
 
 # Normal Q-Q plot
@@ -378,11 +378,16 @@ qq_plot <- tibble(
   theme_sjplot()
 
 ggsave(plot = qq_plot, 
-       filename = here("output/A6-QQPlot.pdf"), 
+       filename = here("appendix/A6-QQPlot.pdf"), 
        width = 6, height = 4)
 
 # Test for autocorrelation
-dwtest(reg_predict_7[["reg"]])
+dwtest_res <- dwtest(reg_predict_7[["reg"]])
+print(xtable(
+  tibble("DW"=dwtest_res$statistic, "p-value"=dwtest_res$p.value), 
+  digits = 3), 
+  booktabs = TRUE, file = here("appendix/dwtest.tex"), include.rownames = FALSE)
+
 
 # Correlation matrix
 
@@ -398,5 +403,5 @@ colnames(corr_matrix_data) <- c(
 print(xtable(
   round(cor(corr_matrix_data, method="pearson", use="complete.obs"), 
         digits = 2)), 
-  file = here("output/A8-Correlation.tex"), booktabs = T)
+  file = here("appendix/A8-Correlation.tex"), booktabs = T)
 

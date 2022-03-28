@@ -1,0 +1,129 @@
+\begin{thebibliography}{25}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{{#1}}
+\providecommand{\urlprefix}{URL }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{DOI~\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{DOI~\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem[{Archibugi and Coco(2004)}]{Archibugi:2004bp}
+Archibugi D, Coco A (2004) {A New Indicator of Technological Capabilities for
+  Developed and Developing Countries (ArCo)}. World Development 32(4):629--654
+
+\bibitem[{Archibugi and Coco(2005)}]{Archibugi:2005iu}
+Archibugi D, Coco A (2005) {Measuring technological capabilities at the country
+  level: A survey and a menu for choice}. Research Policy 34(2):175--194
+
+\bibitem[{Archibugi et~al(2009)Archibugi, Denni, and
+  Filippetti}]{Archibugi:2009bf}
+Archibugi D, Denni M, Filippetti A (2009) {The technological capabilities of
+  nations: The state of the art of synthetic indicators}. Technological
+  Forecasting and Social Change 76(7):917--931
+
+\bibitem[{Bell and Pavitt(1995)}]{Bell:1995wj}
+Bell M, Pavitt K (1995) {The development of technological capabilities}. In:
+  Haque Iu (ed) Trade, Technology, and International Competitiveness,
+  Washington, DC, pp 69--101
+
+\bibitem[{Boschma(2016)}]{Boschma:2016kg}
+Boschma R (2016) {Relatedness as driver of regional diversification: a research
+  agenda}. Regional Studies 51(3):351--364
+
+\bibitem[{Cristelli et~al(2013)Cristelli, Gabrielli, Tacchella, Caldarelli, and
+  Pietronero}]{Cristelli:2013hj}
+Cristelli M, Gabrielli A, Tacchella A, Caldarelli G, Pietronero L (2013)
+  {Measuring the Intangibles: A Metrics for the Economic Complexity of
+  Countries and Products}. PLoS ONE 8(8):e70726
+
+\bibitem[{Dosi et~al(2015)Dosi, Grazzi, and Moschella}]{Dosi:2015ug}
+Dosi G, Grazzi M, Moschella D (2015) {Technology and costs in international
+  competitiveness: From countries and sectors to firms}. Research Policy
+  44:1795--1814
+
+\bibitem[{Felipe et~al(2012)Felipe, Kumar, Abdon, and Bacate}]{Felipe:2012fv}
+Felipe J, Kumar U, Abdon A, Bacate M (2012) {Product complexity and economic
+  development}. Structural Change and Economic Dynamics 23(1):36--68
+
+\bibitem[{Furman et~al(2002)Furman, Porter, and Stern}]{Furman:2002gu}
+Furman JL, Porter ME, Stern S (2002) {The determinants of national innovative
+  capacity}. Research Policy 31(6):899--933
+
+\bibitem[{Hartmann et~al(2017)Hartmann, Guevara, Jara-Figueroa, Aristar{\'a}n,
+  and Hidalgo}]{Hartmann:2017ic}
+Hartmann D, Guevara MR, Jara-Figueroa C, Aristar{\'a}n M, Hidalgo CA (2017)
+  {Linking Economic Complexity, Institutions, and Income Inequality}. World
+  Development 93:75--93
+
+\bibitem[{Hausmann et~al(2007)Hausmann, Hwang, and Rodrik}]{Hausmann:2007hj}
+Hausmann R, Hwang J, Rodrik D (2007) {What you export matters}. Journal of
+  Economic Growth 12(1):1--25
+
+\bibitem[{Hausmann et~al(2013)Hausmann, Hidalgo, Bustos, Coscia, Simoes, and
+  Yildirim}]{Hausmann:2013vj}
+Hausmann R, Hidalgo CA, Bustos S, Coscia M, Simoes A, Yildirim MA (2013) {The
+  Atlas of Economic Complexity}. Mapping Paths to Prosperity, The MIT Press,
+  Cambridge, MA, and London, UK
+
+\bibitem[{Hidalgo(2015)}]{Hidalgo:2015vs}
+Hidalgo CA (2015) {Why Information Grows}. The Evolution of Order, from Atoms
+  to Economies, Basic Books, New York, NY
+
+\bibitem[{Hidalgo and Hausmann(2009)}]{Hidalgo:2009be}
+Hidalgo CA, Hausmann R (2009) {The building blocks of economic complexity}.
+  Proceedings of the National Academy of Sciences 106(26):10570--10575
+
+\bibitem[{Hidalgo et~al(2007)Hidalgo, Klinger, Barab{\'a}si, and
+  Hausmann}]{Hidalgo:2007cp}
+Hidalgo CA, Klinger B, Barab{\'a}si AL, Hausmann R (2007) {The Product Space
+  Conditions the Development of Nations}. Science 317(7):482--487
+
+\bibitem[{Hirschman(1958)}]{Hirschman:1958wr}
+Hirschman AO (1958) {The Strategy of Economic Development}. Yale University
+  Press, New Haven
+
+\bibitem[{Hobday et~al(2000)Hobday, Rush, and Tidd}]{Hobday:2000hx}
+Hobday M, Rush H, Tidd J (2000) {Innovation in complex products and system}.
+  Research Policy 29(7-8):793--804
+
+\bibitem[{Khayyat and Lee(2015)}]{Khayyat:2015ks}
+Khayyat NT, Lee JD (2015) {A measure of technological capabilities for
+  developing countries}. Technological Forecasting and Social Change
+  92:210--223
+
+\bibitem[{Kremer(1993)}]{Kremer:1993cs}
+Kremer M (1993) {The O-Ring Theory of Economic Development}. The Quarterly
+  Journal of Economics 108(3):551--575
+
+\bibitem[{Lall(1992)}]{Lall:1992eq}
+Lall S (1992) {Technological capabilities and industrialization}. World
+  Development 20(2):165--186
+
+\bibitem[{Simoes and Hidalgo(2011)}]{TheEconomicComplex:2011tp}
+Simoes AJG, Hidalgo CA (2011) {The Economic Complexity Observatory: An
+  Analytical Tool for Understanding the Dynamics of Economic Development}
+
+\bibitem[{Sutton(2012)}]{Sutton:2012uka}
+Sutton J (2012) {Competing in Capabilities}. Oxford University Press, Oxford,
+  UK
+
+\bibitem[{Tacchella et~al(2012)Tacchella, Cristelli, Caldarelli, Gabrielli, and
+  Pietronero}]{Tacchella:2012fx}
+Tacchella A, Cristelli M, Caldarelli G, Gabrielli A, Pietronero L (2012) {A New
+  Metrics for Countries' Fitness and Products' Complexity}. Scientific Reports
+  2(723):1--7
+
+\bibitem[{Tacchella et~al(2013)Tacchella, Cristelli, Caldarelli, Gabrielli, and
+  Pietronero}]{Tacchella:2013ko}
+Tacchella A, Cristelli M, Caldarelli G, Gabrielli A, Pietronero L (2013)
+  {Economic complexity: Conceptual grounding of a new metrics for global
+  competitiveness}. Journal of Economic Dynamics and Control 37(8):1683--1691
+
+\bibitem[{Wagner et~al(2001)Wagner, Brahmakulam, Jackson, Wong, and
+  Yoda}]{Wagner:2001up}
+Wagner CS, Brahmakulam IT, Jackson BA, Wong A, Yoda T (2001) {Science {\&}
+  Technology Collaboration: Building Capacity in Developing Countries?} RAND
+  Corporation, Santa Monica, CA
+
+\end{thebibliography}
