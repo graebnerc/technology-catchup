@@ -1,0 +1,41 @@
+
+% Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Tue, Aug 24, 2021 - 16:48:48
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & dplyr (pooled) & dplyr (within) \\ 
+\\[-1.8ex] & (1) & (2)\\ 
+\hline \\[-1.8ex] 
+ lag(Penn\_GDP\_PPP\_log, 1) & $-$1.27$^{***}$ & $-$1.05$^{**}$ \\ 
+  & (0.25) & (0.42) \\ 
+  & & \\ 
+ lag(eci, 1) & 6.16$^{***}$ & 10.13$^{***}$ \\ 
+  & (1.45) & (3.11) \\ 
+  & & \\ 
+ kof\_econ & 0.002 & $-$0.01 \\ 
+  & (0.01) & (0.03) \\ 
+  & & \\ 
+ popgrowth & $-$0.23 & $-$0.01 \\ 
+  & (0.20) & (0.27) \\ 
+  & & \\ 
+ humancapital & 1.66$^{***}$ & 5.53$^{***}$ \\ 
+  & (0.49) & (1.27) \\ 
+  & & \\ 
+ invest & 0.06$^{**}$ & 0.05 \\ 
+  & (0.03) & (0.05) \\ 
+  & & \\ 
+ lag(Penn\_GDP\_PPP\_log, 1):lag(eci, 1) & $-$0.67$^{***}$ & $-$1.06$^{***}$ \\ 
+  & (0.15) & (0.34) \\ 
+  & & \\ 
+ Constant & 9.45$^{***}$ &  \\ 
+  & (1.64) &  \\ 
+  & & \\ 
+\hline \\[-1.8ex] 
+Observations & 822 & 822 \\ 
+R$^{2}$ & 0.09 & 0.11 \\ 
+Adjusted R$^{2}$ & 0.09 & $-$0.08 \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
