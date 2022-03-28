@@ -10,7 +10,7 @@ threshold_lowermiddle_income <- 3895
 vars_used <- c(
   "AdvancedCountry", "HighIncome", "LowIncome", "LowerMiddleIncome", 
   "HigherMiddleIncome", "OPECdummy",
-  "inv_share" # TODO <- Not yet considered
+  "inv_share"
   )
 
 vars_inst <- c("political_rel", "economic_rel", "legal_rel", "PropertyRights")
@@ -175,7 +175,7 @@ data_reg_1970 <- data_reg %>%
 
 data_reg_1970_1984 <- data_reg %>%
   filter(Year>=1970, Year<=1984) %>%
-  select(all_of(c(vars_used_avg, vars_inst)))
+  select(all_of(c(vars_used, vars_used_avg)))
 
 data_reg_1970_1984_AVG <- data_reg_1970_1984 %>% 
   dplyr::group_by(ccode) %>% 
@@ -189,7 +189,7 @@ data_reg_1970_1984_AVG <- data_reg_1970_1984 %>%
       "oil_exports_share_country_Mean", 
       "coal_and_metal_exports_share_country_Mean",
       "GDP_pc_growth_Mean", "KOF_econ_Mean", "pop_growth_Mean", "hc_Mean",
-      "domesticcredit_Mean")))
+      "inv_share_Mean", "domesticcredit_Mean")))
 
 data_reg_predict_1970_1984 <- data_reg_1970 %>%
   select(all_of(
@@ -204,7 +204,7 @@ data_reg_predict_1970_1984 <- data_reg_1970 %>%
     GDP_pc_PPP_log=Penn_GDP_PPP_log,
     popgrowth=pop_growth_Mean,
     humancapital=hc_Mean,
-    # inv_share=inv_share_Mean,
+    inv_share=inv_share_Mean,
     primaryexports=primary_exports_1_share_country_Mean,
     oilexports=oil_exports_share_country_Mean,
     coalandmetalexports=coal_and_metal_exports_share_country_Mean,
