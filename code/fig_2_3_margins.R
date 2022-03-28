@@ -79,5 +79,5 @@ fig23 <- ggpubr::annotate_figure(fig23,
   top = ggpubr::text_grob("Predicted average GDP pc growth over 1985-2014", size = 14))
 
 ggsave(plot = fig23, 
-       filename = here("output/fig_23-predictions.pdf"), 
+       filename = here("output/fig_2-predictions.pdf"), 
        width = 9, height = 4)
