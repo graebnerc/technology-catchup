@@ -76,9 +76,10 @@ make_reg <- function(reg_formula, reg_data, get_marg_plot=FALSE, ...){
 #' @param reg_formula The regression fomula (as fomula object)
 #' @param reg_data The data used for the regression
 #' @param panel_model The model for the estimation ("pooling" or "within")
-#' @param panel_effect The kinf of effect used in within-models
+#' @param panel_effect The kind of effect used in within-models: ("time", 
+#'  "individual" or "twoways")
 #' @return A list with four entries: `reg`, `ses`, `tvals`, and `pvals`
-make_panel_reg <- function(reg_formula, reg_data, panel_model, panel_effect=NULL){
+make_panel_reg <- function(reg_formula, reg_data, panel_model, panel_effect="individual"){
   if (panel_model == "pooling"){
     reg_object <- plm(formula = reg_formula, data=reg_data, 
                       index=c("ccode", "period"), model=panel_model, 
@@ -88,7 +89,7 @@ make_panel_reg <- function(reg_formula, reg_data, panel_model, panel_effect=NULL
   else if (panel_model == "within"){
     reg_object <- plm(formula = reg_formula, data=reg_data, 
                       index=c("ccode", "period"), model=panel_model, 
-                      effect = "individual", na.action=na.exclude)
+                      effect = panel_effect, na.action=na.exclude)
   } else{
     stop("No correct panel model specified!")
   } 
@@ -99,6 +100,36 @@ make_panel_reg <- function(reg_formula, reg_data, panel_model, panel_effect=NULL
     coeftest(reg_object, vcov.=function(x) vcovHC(x, type="sss"))[,3]) 
   pvals <- list(
     coeftest(reg_object, vcov.=function(x) vcovHC(x, type="sss"))[,4]) 
+  
+  name_translator <- c(
+    "(Intercept)"="(Intercept)", 
+    "lag(GDP_pc_PPP_log, 1)"="GDP_pc_PPP_log", 
+    "lag(eci, 1)"="eci",
+    "kof_econ"="kof_econ", 
+    "popgrowth"="popgrowth", 
+    "humancapital"="humancapital", 
+    "inv_share"="inv_share", 
+    "lag(GDP_pc_PPP_log, 1):lag(eci, 1)"="GDP_pc_PPP_log:eci"
+  )
+  
+  new_names_reg <- unname(
+    name_translator[names(reg_object$coefficients)])
+  names(reg_object$coefficients) <- new_names_reg
+  rownames(reg_object$vcov) <- new_names_reg
+  colnames(reg_object$vcov) <- new_names_reg
+  
+  new_names_ses <- unname(
+    name_translator[names(ses[[1]])])
+  names(ses[[1]]) <- new_names_ses
+
+  new_names_tvals <- unname(
+    name_translator[names(tvals[[1]])])
+  names(tvals[[1]]) <- new_names_tvals
+
+  new_names_pvals <- unname(
+    name_translator[names(pvals[[1]])])
+  names(pvals[[1]]) <- new_names_pvals
+  
   final_list <- list(
     "reg" = reg_object,
     "ses" = ses,

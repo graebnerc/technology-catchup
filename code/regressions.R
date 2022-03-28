@@ -8,6 +8,8 @@ suppressPackageStartupMessages(library(stargazer))
 suppressPackageStartupMessages(library(plm))
 suppressPackageStartupMessages(library(xtable))
 suppressPackageStartupMessages(library(sjPlot))
+suppressPackageStartupMessages(library(margins))
+
 source(here("code/regressions_funs.R"))
 
 # Data used--------------------------------------------------------------------
@@ -161,18 +163,18 @@ reg_predict_7_developing <- make_reg(
 
 reg_panel_5year_7 <- make_panel_reg(
   as.formula(paste0(
-    "GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + kof_econ + ", 
-    "lag(eci,1) * lag(Penn_GDP_PPP_log,1) + popgrowth + humancapital")),
+    "GDP_pc_growth ~ lag(GDP_pc_PPP_log, 1) + lag(eci,1) + kof_econ + ", 
+    "lag(eci,1) * lag(GDP_pc_PPP_log,1) + popgrowth + humancapital + inv_share")),
   reg_data=regression_data_5_year, 
   panel_model="pooling")
 
 reg_panel_5year_7_cfe <- make_panel_reg(
   as.formula(paste0(
-    "GDP_pc_growth ~ lag(Penn_GDP_PPP_log, 1) + lag(eci,1) + kof_econ + ",
-    "lag(eci,1) * lag(Penn_GDP_PPP_log,1) + popgrowth + humancapital")),
+    "GDP_pc_growth ~ lag(GDP_pc_PPP_log, 1) + lag(eci,1) + kof_econ + ",
+    "lag(eci,1) * lag(GDP_pc_PPP_log,1) + popgrowth + humancapital + inv_share")),
   reg_data=regression_data_5_year,
   panel_model="within", 
-  panel_effect="individual")
+  panel_effect="twoways")
 
 # Table 2: Main econometric results (1985-2014, 108 countries)-----------------
 order_vec <- c("GDP_pc_PPP_log", "eci", "kof_econ", "popgrowth", "humancapital", 
@@ -187,55 +189,53 @@ stargazer(
   reg_predict_4_invest[["reg"]], 
   reg_predict_7[["reg"]], 
   reg_panel_5year_7[["reg"]], 
-  reg_panel_5year_7_cfe[["reg"]], 
+  reg_panel_5year_7_cfe[["reg"]],
   t = list(
-    unlist(reg_predict_1[["tvals"]]), 
-    unlist(reg_predict_2[["tvals"]]), 
-    unlist(reg_predict_4[["tvals"]]), 
-    unlist(reg_predict_4_kof[["tvals"]]), 
-    unlist(reg_predict_4_popgrowth[["tvals"]]), 
-    unlist(reg_predict_4_humancapital[["tvals"]]), 
-    unlist(reg_predict_4_invest[["tvals"]]), 
-    unlist(reg_predict_7[["tvals"]]), 
-    unlist(reg_panel_5year_7[["tvals"]]), 
+    unlist(reg_predict_1[["tvals"]]),
+    unlist(reg_predict_2[["tvals"]]),
+    unlist(reg_predict_4[["tvals"]]),
+    unlist(reg_predict_4_kof[["tvals"]]),
+    unlist(reg_predict_4_popgrowth[["tvals"]]),
+    unlist(reg_predict_4_humancapital[["tvals"]]),
+    unlist(reg_predict_4_invest[["tvals"]]),
+    unlist(reg_predict_7[["tvals"]]),
+    unlist(reg_panel_5year_7[["tvals"]]),
     unlist(reg_panel_5year_7_cfe[["tvals"]])
-    ), 
+    ),
   se=list(
-    unlist(reg_predict_1[["ses"]]), 
-    unlist(reg_predict_2[["ses"]]), 
-    unlist(reg_predict_4[["ses"]]), 
-    unlist(reg_predict_4_kof[["ses"]]), 
-    unlist(reg_predict_4_popgrowth[["ses"]]), 
-    unlist(reg_predict_4_humancapital[["ses"]]), 
-    unlist(reg_predict_4_invest[["ses"]]), 
-    unlist(reg_predict_7[["ses"]]), 
-    unlist(reg_panel_5year_7[["ses"]]), 
+    unlist(reg_predict_1[["ses"]]),
+    unlist(reg_predict_2[["ses"]]),
+    unlist(reg_predict_4[["ses"]]),
+    unlist(reg_predict_4_kof[["ses"]]),
+    unlist(reg_predict_4_popgrowth[["ses"]]),
+    unlist(reg_predict_4_humancapital[["ses"]]),
+    unlist(reg_predict_4_invest[["ses"]]),
+    unlist(reg_predict_7[["ses"]]),
+    unlist(reg_panel_5year_7[["ses"]]),
     unlist(reg_panel_5year_7_cfe[["ses"]])
-    ), 
+    ),
   p=list(
-    unlist(reg_predict_1[["pvals"]]), 
-    unlist(reg_predict_2[["pvals"]]), 
-    unlist(reg_predict_4[["pvals"]]), 
-    unlist(reg_predict_4_kof[["pvals"]]), 
-    unlist(reg_predict_4_popgrowth[["pvals"]]), 
-    unlist(reg_predict_4_humancapital[["pvals"]]), 
-    unlist(reg_predict_4_invest[["pvals"]]), 
-    unlist(reg_predict_7[["pvals"]]), 
-    unlist(reg_panel_5year_7[["pvals"]]), 
+    unlist(reg_predict_1[["pvals"]]),
+    unlist(reg_predict_2[["pvals"]]),
+    unlist(reg_predict_4[["pvals"]]),
+    unlist(reg_predict_4_kof[["pvals"]]),
+    unlist(reg_predict_4_popgrowth[["pvals"]]),
+    unlist(reg_predict_4_humancapital[["pvals"]]),
+    unlist(reg_predict_4_invest[["pvals"]]),
+    unlist(reg_predict_7[["pvals"]]),
+    unlist(reg_panel_5year_7[["pvals"]]),
     unlist(reg_panel_5year_7_cfe[["pvals"]])
     ),
   float = FALSE, out = here("output/tex/Tab2_mainresults_raw.tex"),
-  #column.labels = c("uncond. conv.", "ECI", "KOFecon", "POPgrowth", "HumanCapital", 
-  #                  "All controls", "Panel-pooled", "country-FE"), 
+  column.labels = c(
+    "Uncond. conv.", "ECI", "Interact." ,"Globaliz.", "Population", 
+    "HumanCapital", "Investment", "All controls", "Panel-pooled", "Panel-CFE"),
   dep.var.caption = "", digits = 3, dep.var.labels.include = FALSE, 
-  model.names = FALSE, omit.stat =  c("ser", "f"),
-  #order = c(1, 7, 4, 5, 6, 8, 9),
-  #order = c("GDP_pc_PPP_log", "eci", "kof_econ", "popgrowth", "humancapital", 
-  #          "invest", "GDP_pc_PPP_log:eci", "(Intercept)"),
+  model.names = FALSE, omit.stat =  c("ser", "f", "adj.rsq"),
   order=paste0("^", order_vec , "$"),
-  #covariate.labels = c(
-  #  "log(GDPpc)", "ECI", "Globalization", "Population growth", "Human capital",
-  #  "log(GDPpc) $\\cdot$ ECI"),
+  covariate.labels = c(
+   "GDPpc", "ECI", "Globalization", "Pop. growth", "Human capital", 
+   "Investment", "GDPpc \\cdot ECI"),
   omit = "lag*"
   )
 
