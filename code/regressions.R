@@ -263,7 +263,6 @@ stargazer(
   reg_predict_7_economicquality[["reg"]],
   reg_predict_7_politicalquality[["reg"]],
   reg_predict_7_legalquality[["reg"]],
-  reg_predict_7_politicalquality_oilexports[["reg"]],
   t=list(
     unlist(reg_predict_7[["tvals"]]),
     unlist(reg_predict_7_developing[["tvals"]]),
@@ -272,8 +271,7 @@ stargazer(
     unlist(reg_predict_7_coalandmetalexports[["tvals"]]),
     unlist(reg_predict_7_economicquality[["tvals"]]),
     unlist(reg_predict_7_politicalquality[["tvals"]]),
-    unlist(reg_predict_7_legalquality[["tvals"]]),
-    unlist(reg_predict_7_politicalquality_oilexports[["tvals"]])
+    unlist(reg_predict_7_legalquality[["tvals"]])
     ),
   se=list(
     unlist(reg_predict_7[["ses"]]),
@@ -283,8 +281,7 @@ stargazer(
     unlist(reg_predict_7_coalandmetalexports[["ses"]]),
     unlist(reg_predict_7_economicquality[["ses"]]),
     unlist(reg_predict_7_politicalquality[["ses"]]),
-    unlist(reg_predict_7_legalquality[["ses"]]),
-    unlist(reg_predict_7_politicalquality_oilexports[["ses"]])
+    unlist(reg_predict_7_legalquality[["ses"]])
     ),
   p=list(
     unlist(reg_predict_7[["pvals"]]),
@@ -294,8 +291,7 @@ stargazer(
     unlist(reg_predict_7_coalandmetalexports[["pvals"]]),
     unlist(reg_predict_7_economicquality[["pvals"]]),
     unlist(reg_predict_7_politicalquality[["pvals"]]),
-    unlist(reg_predict_7_legalquality[["pvals"]]),
-    unlist(reg_predict_7_politicalquality_oilexports[["pvals"]])
+    unlist(reg_predict_7_legalquality[["pvals"]])
     ),
   out = here("output/tex/Tab3_robustness_raw.tex"), float = FALSE, 
   column.labels = c(

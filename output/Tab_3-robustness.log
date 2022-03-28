@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.12.0 (TeX Live 2020)  (format=lualatex 2020.9.1)  28 MAR 2022 14:56
+This is LuaHBTeX, Version 1.12.0 (TeX Live 2020)  (format=lualatex 2020.9.1)  28 MAR 2022 20:53
  restricted system commands enabled.
 **output/Tab_3-robustness.tex
 (./output/Tab_3-robustness.tex
@@ -697,11 +697,11 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 Here is how much of LuaTeX's memory you used:
  12274 strings out of 480992
  100000,552014 words of node,token memory allocated
- 34845 words of node memory still in use:
-   484 hlist, 2 vlist, 38 rule, 24 disc, 206 math, 1772 glue, 18 kern, 1511 glyp
-h, 1674 attribute, 48 glue_spec, 838 attribute_list, 2 write, 4 pdf_colorstack n
+ 31426 words of node memory still in use:
+   439 hlist, 2 vlist, 38 rule, 24 disc, 184 math, 1595 glue, 17 kern, 1347 glyp
+h, 1518 attribute, 48 glue_spec, 760 attribute_list, 2 write, 4 pdf_colorstack n
 odes
-   avail lists: 2:34,3:6,4:9,5:37,6:1,7:3499,8:4,9:527,11:24
+   avail lists: 2:34,3:6,4:9,5:36,6:1,7:3136,8:4,9:482,11:24
  29194 multiletter control sequences out of 65536+600000
  36 fonts using 4012019 bytes
  99i,8n,76p,534b,176s stack positions out of 5000i,500n,10000p,200000b,100000s
@@ -711,7 +711,7 @@ f></usr/local/texlive/2020/texmf-dist/fonts/opentype/public/lm/lmroman10-regular
 fb></usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><
 /usr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></u
 sr/local/texlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on Tab_3-robustness.pdf (1 page, 41057 bytes).
+Output written on Tab_3-robustness.pdf (1 page, 40713 bytes).
 
 PDF statistics: 41 PDF objects out of 1000 (max. 8388607)
  27 compressed objects within 1 object stream
