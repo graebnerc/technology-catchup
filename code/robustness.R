@@ -311,3 +311,7 @@ ggsave(plot = robustness_full2,
        filename = here("output/fig_3_robustness.pdf"), 
        width = 9, height = 4)
 
+ggsave(plot = robustness_full2, 
+       filename = here("output/fig_3_robustness.jpeg"), 
+       width = 9, height = 4)
+

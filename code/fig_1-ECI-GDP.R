@@ -33,3 +33,7 @@ plot_complexity
 ggsave(plot = plot_complexity, 
        filename = here("output/Fig_1-ECI-GDP.pdf"), 
        width = 8, height = 5)
+
+ggsave(plot = plot_complexity, 
+       filename = here("output/Fig_1-ECI-GDP.jpeg"), 
+       width = 8, height = 5)

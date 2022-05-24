@@ -81,3 +81,7 @@ fig23 <- ggpubr::annotate_figure(fig23,
 ggsave(plot = fig23, 
        filename = here("output/fig_2-predictions.pdf"), 
        width = 9, height = 4)
+
+ggsave(plot = fig23, 
+       filename = here("output/fig_2-predictions.jpeg"), 
+       width = 9, height = 4)
